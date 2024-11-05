@@ -1,0 +1,72 @@
+{% extends 'user/base.html' %}
+{% load static %}
+{% block title %}Home - Vegefoods{% endblock %}
+
+
+{% block content %} 
+
+  <div class="hero-wrap hero-bread" style="background-image: url({% static "images/nowshop.jpg" %});">
+    <div class="container">
+      <div class="row no-gutters slider-text align-items-center justify-content-center">
+        <div class="col-md-12 ftco-animate text-center">
+          <p class="breadcrumbs"><span class="mr-2"><a href="{% url 'homepage' %}">Home</a></span> <span>Address Management</span></p>
+          <h1 class="mb-0 bread">Address Management</h1>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <section class="ftco-section contact-section bg-light">
+    <div class="container">
+      <div class="row mb-5">
+        <div class="col-md-4">
+          <div class="bg-white p-4">
+            <h3>Address Management</h3>
+            <ul class="list-unstyled">
+              <li><a href="#address-management" class="btn btn-link">Manage Addresses</a></li>
+              <li><a href="{% url 'myprofile' user.id %}" class="btn btn-link">Profile Management</a></li>
+            </ul>
+            <!-- Add New Address Button -->
+   
+            <a href="{% url 'add_address' user.id %}" class="btn btn-primary py-3 px-5">Add New Address</a>
+          </div>
+        </div>
+        <div class="col-md-8">
+          <div class="bg-white p-4 address-container">
+            <h3>Manage Addresses</h3>
+
+            <!-- Displaying Addresses -->
+            {% if delete_status == "success" %}
+                <div class="alert alert-success">Address deleted successfully.</div>
+            {% elif delete_status == "failed" %}
+                <div class="alert alert-danger">You are not authorized to delete this address.</div>
+            {% endif %}
+
+            {% for address in addresses %}
+                <div class="address-list">
+                    <div class="address-item">
+                        <h4>{{ address.full_name }}</h4>
+                        <p><strong>Address:</strong> {{ address.address }}</p>
+                        <p><strong>City:</strong> {{ address.locality }}</p>
+                        <p><strong>District:</strong> {{ address.district }}</p>
+                        <p><strong>Pincode:</strong> {{ address.pincode.pincode }}</p>
+
+                        <a href="{% url 'edit_address' address.id %}" class="btn btn-secondary">Edit</a>
+                        <form method="POST" action="{% url 'delete_address' %}" style="display:inline;">
+                            {% csrf_token %}
+                            <input type="hidden" name="address_id" value="{{ address.id }}">
+                            <button type="submit" class="btn btn-danger">Delete</button>
+                        </form>
+                    </div>
+                    <hr>
+                </div>
+            {% endfor %}
+
+            <hr>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {% endblock %}

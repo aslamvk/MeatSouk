@@ -1,0 +1,97 @@
+{% load socialaccount %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meat Souk - Sign Up</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+    <div class="container">
+        <h1>Meat Souk</h1>
+        <form action="{% url 'signup' %}" method="POST" class="signup-form">
+            {% csrf_token %}
+            <div class="input-group">
+                <div class="form-field">
+                    <label for="first-name">First name</label>
+                    <input type="text" name="first-name" id="first-name" placeholder="Enter Your Name" required>
+                </div>
+                <div class="form-field">
+                    <label for="last-name">Last name</label>
+                    <input type="text" name="last-name" id="last-name" placeholder="Enter Your Name" required>
+                </div>
+            </div>
+
+            <div class="input-group">
+                <div class="form-field">
+                    <label for="email">Email</label>
+                    <input type="email" name="email" id="email" placeholder="Enter Your Email" required>
+                    {% if errors.email_exists %}
+                        <p class="error-message">{{ errors.email_exists }}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="input-group">
+                <div class="form-field">
+                    <label for="username">Username</label>
+                    <input type="text" name="username" id="username" placeholder="Enter Your username" required>
+                    {% if errors.username_exists %}
+                        <p class="error-message">{{ errors.username_exists }}</p>
+                    {% endif %}
+                </div>
+                <div class="form-field password-wrapper">
+                    <label for="password">Password</label>
+                    <input type="password" name="password" id="password" placeholder="Enter Your Password" required>
+                    <span class="toggle-password" onclick="togglePassword('password')">👁</span>
+                </div>
+            </div>
+
+            <div class="form-field full-width password-wrapper">
+                <label for="re-enter-password">Re-enter password</label>
+                <input type="password" name="re-enter-password" id="re-enter-password" placeholder="Re-enter password" required>
+                <span class="toggle-password" onclick="togglePassword('re-enter-password')">👁</span>
+                {% if errors.password_mismatch %}
+                    <p class="error-message">{{ errors.password_mismatch }}</p>
+                {% endif %}
+                {% if errors.password_length %}
+                    <p class="error-message">{{ errors.password_length }}</p>
+                {% endif %}
+            </div>
+
+            <!-- Display any general errors -->
+            {% if errors.email_error %}
+                <p class="error-message">{{ errors.email_error }}</p>
+            {% endif %}
+
+            <button type="submit" class="btn">Sign-up</button>
+        </form>
+        <p class="or">OR</p>
+        <div class="google-login">
+            <a href="{% provider_login_url 'google' %}">
+                <button class="google-btn">
+                    <img src="{% static 'images/google.jpg' %}" alt="Google Logo" class="google-logo">
+                    Log in with Google
+                </button>
+            </a>                        
+        </div>
+        <p class="login-text">If you already have an account? <a href="{% url 'login' %}">Login Now</a></p>
+    </div>
+
+    <script>
+        function togglePassword(inputId) {
+            const passwordInput = document.getElementById(inputId);
+            const toggleIcon = passwordInput.nextElementSibling;
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                toggleIcon.textContent = '👁‍🗨'; // Change icon when password is visible
+            } else {
+                passwordInput.type = 'password';
+                toggleIcon.textContent = '👁'; // Change back to original icon
+            }
+        }
+    </script>
+</body>
+</html>

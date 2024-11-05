@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pincodes</title>
+    <style>
+        .list-btn, .unlist-btn, .edit-btn {
+            cursor: pointer;
+        }
+    </style>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/admin_pincode.css' %}">
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <nav class="sidebar">
+            <div class="brand">meatsouk</div>
+            <ul>
+                <li><a href="{% url 'admin_page' %}">Dashboard</a></li>
+                <li><a href="{% url 'user_page' %}">Users</a></li>
+                <li><a href="">Category</a></li>
+                <li><a href="{% url 'admin_product_view' %}">Products</a></li>
+                <li><a href="{% url 'admin_order_list' %}">Orders</a></li>
+                <li><a href="#">Coupons</a></li>
+                <li><a href="#">Deals</a></li>
+                <li><a href="#">Pin code</a></li>
+            </ul>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header>
+                <div class="search-bar">
+                    <input type="text" placeholder="Search for Pincode">
+                </div>
+                <div class="user-section">
+                    <div class="logout-btn">
+                        <a href="{% url 'admin_logout' %}">LOGOUT</a>
+                    </div>
+                    <div class="user-image">
+                        <img src="user.jpg" alt="User">
+                    </div>
+                </div>
+            </header>
+
+            <section class="pincode-section">
+                <div class="pincode-header">
+                    <h2>Pincodes</h2>
+                    <a href="{% url 'add_admin_pincode' %}" class="btn add-btn">Add Pincode</a>
+                </div>
+
+                <!-- Display messages for pincode actions -->
+                {% if messages %}
+                    <div class="messages">
+                        {% for message in messages %}
+                            <div class="alert">{{ message }}</div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                <table class="pincode-table">
+                    <thead>
+                        <tr>
+                            <th>Pincode</th>
+                            <th>City</th>
+                            <th>District</th>
+                            <th>State</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for pincode in pincodes %}
+                        <tr>
+                            <td>{{ pincode.pincode }}</td>
+                            <td>{{ pincode.city }}</td>
+                            <td>{{ pincode.district }}</td>
+                            <td>{{ pincode.state }}</td>
+                            <td>
+                                <form method="POST" action="{% if pincode.is_listed %}{% url 'unlist_pincode' pincode.id %}{% else %}{% url 'list_pincode' pincode.id %}{% endif %}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="{% if pincode.is_listed %}unlist-btn{% else %}list-btn{% endif %}">
+                                        {% if pincode.is_listed %}Unlist{% else %}List{% endif %}
+                                    </button>
+                                </form>
+                                <a href="" class="btn edit-btn">✏️</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </section>
+        </main>
+    </div>
+
+    <!-- JavaScript to toggle List/Unlist -->
+    <script>
+        function toggleListing(button, currentState) {
+            if (currentState === 'list') {
+                button.textContent = 'Unlist';
+                button.className = 'unlist-btn';
+                button.setAttribute('onclick', "toggleListing(this, 'unlist')");
+                console.log('Pincode listed');
+            } else if (currentState === 'unlist') {
+                button.textContent = 'List';
+                button.className = 'list-btn';
+                button.setAttribute('onclick', "toggleListing(this, 'list')");
+                console.log('Pincode unlisted');
+            }
+        }
+    </script>
+</body>
+</html>

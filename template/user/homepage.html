@@ -1,0 +1,285 @@
+{% extends "user/base.html" %}
+{% load static %}
+{% block title %}Home-Meatsouk{% endblock %}
+
+{% block content %}
+<style>
+	.modal-body h4, .modal-body h5 {
+	  color: #6c63ff;
+	}
+	.pincode-input {
+	  width: 50px;
+	  height: 60px;
+	  font-size: 24px;
+	  text-align: center;
+	  margin: 0 5px;
+	  border: 2px solid #6c63ff;
+	  border-radius: 8px;
+	}
+	.form-control {
+	  width: 80%;
+	  margin: 0 auto;
+	  border: 2px solid #6c63ff;
+	  border-radius: 8px;
+	}
+</style>
+    <section id="home-section" class="hero">
+		  <div class="home-slider owl-carousel">
+	      <div class="slider-item" style="background-image: url('{% static "images/home1.jpg" %}');">
+	      	<div class="overlay"></div>
+	        <div class="container">
+	          <div class="row slider-text justify-content-center align-items-center" data-scrollax-parent="true">
+
+	            <div class="col-md-12 ftco-animate text-center">
+	              <h1 class="mb-2">We serve Fresh Meats</h1>
+	              <h2 class="subheading mb-4">We deliver Fresh meats</h2>
+	              <p><a href="#" class="btn btn-primary">View Details</a></p>
+	            </div>
+
+	          </div>
+	        </div>
+	      </div>
+		  {% load static %}
+	      <div class="slider-item" style="background-image: url('{% static "images/home1.jpg" %}');">
+	      	<div class="overlay"></div>
+	        <div class="container">
+	          <div class="row slider-text justify-content-center align-items-center" data-scrollax-parent="true">
+
+	            <div class="col-sm-12 ftco-animate text-center">
+	              <h1 class="mb-2">100% Fresh Meats</h1>
+	              <h2 class="subheading mb-4">We deliver Fresh Meats</h2>
+	              <p><a href="#" class="btn btn-primary">View Details</a></p>
+	            </div>
+
+	          </div>
+	        </div>
+	      </div>
+	    </div>
+    </section>
+
+    <section class="ftco-section">
+			<div class="container">
+				<div class="row no-gutters ftco-services">
+          <div class="col-md-3 text-center d-flex align-self-stretch ftco-animate">
+            <div class="media block-6 services mb-md-0 mb-4">
+              <div class="icon bg-color-1 active d-flex justify-content-center align-items-center mb-2">
+				<img src="https://cdn-icons-png.flaticon.com/512/811/811643.png" width="50" height="50" alt="Fish free icon" title="Fish free icon">
+              </div>
+              <div class="media-body">
+                <h3 class="heading">Fish</h3>
+                <span>Fresh fish from <br>freshwater & saltwater</span>
+              </div>
+            </div>      
+          </div>
+          <div class="col-md-3 text-center d-flex align-self-stretch ftco-animate">
+            <div class="media block-6 services mb-md-0 mb-4">
+              <div class="icon bg-color-2 d-flex justify-content-center align-items-center mb-2">
+				<img src="   https://cdn-icons-png.flaticon.com/512/5954/5954264.png " width="50" height="50" alt="" title="" class="img-small">
+              </div>
+              <div class="media-body">
+                <h3 class="heading">Mutton</h3>
+                <span>Fresh Mutton from <br>our farms</span>
+              </div>
+            </div>    
+          </div>
+          <div class="col-md-3 text-center d-flex align-self-stretch ftco-animate">
+            <div class="media block-6 services mb-md-0 mb-4">
+              <div class="icon bg-color-3 d-flex justify-content-center align-items-center mb-2">
+				<img src="   https://cdn-icons-png.flaticon.com/512/11312/11312406.png " width="50" height="50" alt="" title="" class="img-small">
+              </div>
+              <div class="media-body">
+                <h3 class="heading">Beaf</h3>
+                <span>Fresh Beaf from <br>our farms</span>
+              </div>
+            </div>      
+          </div>
+          <div class="col-md-3 text-center d-flex align-self-stretch ftco-animate">
+            <div class="media block-6 services mb-md-0 mb-4">
+              <div class="icon bg-color-4 d-flex justify-content-center align-items-center mb-2">
+				<img src="   https://cdn-icons-png.flaticon.com/512/4868/4868143.png " width="50" height="50" alt="" title="" class="img-small">
+              </div>
+              <div class="media-body">
+                <h3 class="heading">Poultry</h3>
+                <span>Fresh Poultry meats <br>our farms</span>
+              </div>
+            </div>      
+          </div>
+        </div>
+			</div>
+		</section>
+
+		<section class="ftco-section ftco-category ftco-no-pt">
+			<div class="container">
+				<div class="row">
+					<div class="col-md-8">
+						<div class="row">
+							<div class="col-md-6 order-md-last align-items-stretch d-flex">
+								<div class="category-wrap-2 ftco-animate img align-self-stretch d-flex" style="background-image: url('{% static "images/nowshop.jpg" %}');">
+									<div class="text text-center">
+										<h2>Fresh meats</h2>
+										<p>Protect the health of every home</p>
+										<p><a href="" class="btn btn-primary">Shop now</a></p>
+									</div>
+								</div>
+							</div>
+							<div class="col-md-6">
+								<div class="category-wrap ftco-animate img mb-4 d-flex align-items-end" style="background-image: url('{% static "images/seer-steaks.jpg" %}');">
+									<div class="text px-3 py-1">
+										<h2 class="mb-0"><a href="#">Fish</a></h2>
+									</div>
+								</div>
+								<div class="category-wrap ftco-animate img d-flex align-items-end" style="background-image: url('{% static "images/beaf.jpg" %}');">
+									<div class="text px-3 py-1">
+										<h2 class="mb-0"><a href="#">Beaf</a></h2>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<div class="col-md-4">
+						<div class="category-wrap ftco-animate img mb-4 d-flex align-items-end" style="background-image: url('{% static "images/mutton_rib.jpeg" %}');">
+							<div class="text px-3 py-1">
+								<h2 class="mb-0"><a href="#">Mutton</a></h2>
+							</div>		
+						</div>
+						<div class="category-wrap ftco-animate img d-flex align-items-end" style="background-image: url('{% static "images/whole_chicken.jpg" %}');">
+							<div class="text px-3 py-1">
+								<h2 class="mb-0"><a href="#">Poultry</a></h2>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+
+	<section class="ftco-section testimony-section">
+		<div class="container">
+		  <div class="row justify-content-center mb-5 pb-3">
+			<div class="col-md-7 heading-section ftco-animate text-center">
+				<span class="subheading">Testimony</span>
+			  <h2 class="mb-4">Our satisfied customer says</h2>
+			  <p>Far far away, behind the word mountains, far from the countries Vokalia and Consonantia, there live the blind texts. Separated they live in</p>
+			</div>
+		  </div>
+		  <div class="row ftco-animate">
+			<div class="col-md-12">
+			  <div class="carousel-testimony owl-carousel">
+				<div class="item">
+				  <div class="testimony-wrap p-4 pb-5">
+					<div class="user-img mb-5" style="background-image: url('{% static "images/basith.png" %}')">
+					  <span class="quote d-flex align-items-center justify-content-center">
+						<i class="icon-quote-left"></i>
+					  </span>
+					</div>
+					<div class="text text-center">
+					  <p class="mb-5 pl-4 line">Far far away, behind the word mountains, far from the countries Vokalia and Consonantia, there live the blind texts.</p>
+					  <p class="name">Garreth Smith</p>
+					  <span class="position">Marketing Manager</span>
+					</div>
+				  </div>
+				</div>
+				<div class="item">
+				  <div class="testimony-wrap p-4 pb-5">
+					<div class="user-img mb-5" style="background-image: url('{% static "images/abhinav.jpg" %}')">
+					  <span class="quote d-flex align-items-center justify-content-center">
+						<i class="icon-quote-left"></i>
+					  </span>
+					</div>
+					<div class="text text-center">
+					  <p class="mb-5 pl-4 line">Far far away, behind the word mountains, far from the countries Vokalia and Consonantia, there live the blind texts.</p>
+					  <p class="name">Garreth Smith</p>
+					  <span class="position">Interface Designer</span>
+					</div>
+				  </div>
+				</div>
+				<div class="item">
+				  <div class="testimony-wrap p-4 pb-5">
+					<div class="user-img mb-5" style="background-image: url('{% static "images/shan.jpg" %}')">
+					  <span class="quote d-flex align-items-center justify-content-center">
+						<i class="icon-quote-left"></i>
+					  </span>
+					</div>
+					<div class="text text-center">
+					  <p class="mb-5 pl-4 line">Far far away, behind the word mountains, far from the countries Vokalia and Consonantia, there live the blind texts.</p>
+					  <p class="name">Garreth Smith</p>
+					  <span class="position">UI Designer</span>
+					</div>
+				  </div>
+				</div>
+				  </div>
+				</div>
+			  </div>
+			</div>
+		  </div>
+		</div>
+	</section>
+
+	<!-- Modal -->
+	<div class="modal fade" id="pincodeModal" tabindex="-1" role="dialog" aria-labelledby="pincodeModalLabel" aria-hidden="true">
+		<div class="modal-dialog modal-dialog-centered" role="document">
+			<div class="modal-content">
+				<div class="modal-body text-center">
+					<h4 class="mb-3">Please Enter Pincode</h4>
+					<div class="d-flex justify-content-center mb-4">
+						<input type="text" maxlength="1" class="pincode-input" id="pin1" />
+						<input type="text" maxlength="1" class="pincode-input" id="pin2" />
+						<input type="text" maxlength="1" class="pincode-input" id="pin3" />
+						<input type="text" maxlength="1" class="pincode-input" id="pin4" />
+						<input type="text" maxlength="1" class="pincode-input" id="pin5" />
+						<input type="text" maxlength="1" class="pincode-input" id="pin6" />
+					</div>
+					<button id="submit-pincode" class="btn btn-primary">Submit Pincode</button>
+	
+					<h5 class="mb-3">OR</h5>
+					<h4 class="mb-3">Select City</h4>
+					<select class="form-control text-center" id="city-dropdown">
+						<option value="">Select a city</option>
+						{% for city in cities %}
+							<option value="{{ city }}">{{ city }}</option>
+						{% endfor %}
+					</select>
+					<button id="submit-city" class="btn btn-primary">Submit City</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	<script>
+		document.addEventListener('DOMContentLoaded', function() {
+			{% if user.is_authenticated and not request.session.pincode_set %}
+				$('#pincodeModal').modal('show');
+			{% endif %}
+	
+			document.getElementById('submit-pincode').addEventListener('click', function() {
+				const pincode = Array.from(document.querySelectorAll('.pincode-input'))
+									.map(input => input.value)
+									.join('');
+				fetch("{% url 'set_pincode' %}", {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						'X-CSRFToken': '{{ csrf_token }}'
+					},
+					body: JSON.stringify({ pincode })
+				}).then(() => {
+					window.location.href = "{% url 'homepage' %}";
+				});
+			});
+	
+			document.getElementById('submit-city').addEventListener('click', function() {
+				const city = document.getElementById('city-dropdown').value;
+				fetch("{% url 'set_city' %}", {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						'X-CSRFToken': '{{ csrf_token }}'
+					},
+					body: JSON.stringify({ city })
+				}).then(() => {
+					window.location.href = "{% url 'homepage' %}";
+				});
+			});
+		});
+	</script>
+  
+{% endblock %}

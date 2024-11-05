@@ -1,0 +1,226 @@
+{% extends 'user/base.html' %}
+{% load static %}
+{% block title %}Cart - meatsouk{% endblock %}
+
+{% block content %}
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<section class="ftco-section ftco-cart">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12 ftco-animate">
+                <div class="cart-list">
+                    <table class="table">
+                        <thead class="thead-primary">
+                            <tr class="text-center">
+                                <th>&nbsp;</th>
+                                <th>&nbsp;</th>
+                                <th>Product name</th>
+                                <th>Price</th>
+                                <th>Quantity</th>
+                                <th>Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in items %}
+                            <tr class="text-center align-middle">
+                                <td class="product-remove">
+                                    <a href="#" data-product-id="{{ item.products.id }}">
+                                        <span class="ion-ios-close"></span>
+                                    </a>
+                                </td>
+                                <td class="image-prod">
+                                    <div class="img" style="background-image:url({{ item.products.image1.url }});"></div>
+                                </td>
+                                <td class="product-name">
+                                    <h3>{{ item.products.product_name }}</h3>
+                                </td>
+                                <td class="price">₹{{ item.products.price }}</td>
+                                <td class="quantity">
+									<div class="quantity-controls">
+										<button class="btn btn-outline-secondary btn-minus" data-product-id="{{ item.products.id }}">-</button>
+										<span class="quantity-value">{{ item.quantity }}</span> kg
+										<button class="btn btn-outline-secondary btn-plus" data-product-id="{{ item.products.id }}">+</button>
+									</div>
+									<span class="stock-available text-muted">Available: {{ item.products.stock }} kg</span>
+									<span class="error-msg text-danger" style="display: none;">Quantity exceeds available stock</span>
+								</td>
+                                <td class="total">₹{{ item.products.price|floatformat:2 }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr class="text-center">
+                                <td colspan="6">Your cart is empty</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="row justify-content-end">
+            <div class="col-lg-4 mt-5 cart-wrap ftco-animate">
+                <div class="cart-total mb-3">
+                    <h3>Cart Totals</h3>
+                    {% if items|length > 0 %}
+                    <p class="d-flex">
+                        <span>Subtotal</span>
+                        <span id="subtotal">₹{{ subtotal }}</span>
+                    </p>
+                    <p class="d-flex">
+                        <span>Delivery</span>
+                        <span id="delivery">₹{{ delivery_charge }}</span>
+                    </p>
+                    <hr>
+                    <p class="d-flex total-price">
+                        <span>Total</span>
+                        <span id="total">₹{{ total }}</span>
+                    </p>
+                    {% else %}
+                    <p class="d-flex">
+                        <span>Subtotal</span>
+                        <span id="subtotal">₹0.00</span>
+                    </p>
+                    <p class="d-flex">
+                        <span>Delivery</span>
+                        <span id="delivery">₹0.00</span>
+                    </p>
+                    <hr>
+                    <p class="d-flex total-price">
+                        <span>Total</span>
+                        <span id="total">₹0.00</span>
+                    </p>
+                    {% endif %}
+                </div>
+                <p><a href="{% url 'checkout' %}" class="btn btn-primary py-3 px-4">Proceed to Checkout</a></p>
+            </div>
+        </div>
+    </div>
+</section>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+	document.addEventListener('DOMContentLoaded', function () {
+
+		calculateCartTotals();
+
+		function calculateCartTotals() {
+			let subtotal = 0;
+			// Loop through each row to calculate individual product totals
+			document.querySelectorAll('.table tbody tr').forEach(function(row) {
+				const quantitySpan = row.querySelector('.quantity-value');
+				const priceSpan = row.querySelector('.price');
+				const totalSpan = row.querySelector('.total');
+
+				const quantity = parseFloat(quantitySpan.textContent);
+				const price = parseFloat(priceSpan.textContent.replace('₹', '').replace(',', ''));
+				const total = price * quantity; // Calculate the total for this product
+
+				// Update the total cell
+				totalSpan.textContent = '₹' + total.toFixed(2);
+				subtotal += total; // Add to the subtotal
+			});
+
+			// Calculate delivery charge
+			const deliveryCharge = subtotal > 500 ? 0 : 40;
+			const total = subtotal + deliveryCharge;
+
+			// Update the subtotal and total in the cart summary
+			document.getElementById('subtotal').textContent = '₹' + subtotal.toFixed(2);
+			document.getElementById('delivery').textContent = '₹' + deliveryCharge.toFixed(2);
+			document.getElementById('total').textContent = '₹' + total.toFixed(2);
+		}
+
+		document.querySelectorAll('.btn-plus, .btn-minus').forEach(button => {
+			button.addEventListener('click', function () {
+				const productId = this.getAttribute('data-product-id');
+				const quantitySpan = this.closest('.quantity-controls').querySelector('.quantity-value');
+				const stockSpan = this.closest('td').querySelector('.stock-available');
+				const errorSpan = this.closest('td').querySelector('.error-msg');
+				let quantity = parseFloat(quantitySpan.textContent);
+				let stock = parseFloat(stockSpan.textContent.replace('Available: ', '').replace(' kg', ''));
+
+				if (this.classList.contains('btn-plus')) {
+					if (quantity < stock && quantity < 6) {
+						quantity += 0.5;
+						errorSpan.style.display = 'none';
+					} else {
+						errorSpan.style.display = 'block';
+					}
+				} else if (quantity > 0.5) {
+					quantity -= 0.5;
+					errorSpan.style.display = 'none';
+				}
+
+				quantitySpan.textContent = quantity.toFixed(1);
+
+				const price = parseFloat(this.closest('tr').querySelector('.price').textContent.replace('₹', ''));
+				const total = price * quantity;
+				this.closest('tr').querySelector('.total').textContent = '₹' + total.toFixed(2);
+
+				calculateCartTotals();
+
+				axios.post('/update-quantity/', {
+					product_id: productId,
+					quantity: quantity
+				}, {
+					headers: {
+						'X-CSRFToken': '{{ csrf_token }}'
+					}
+				})
+				.then(response => {
+					if (!response.data.success) {
+						Swal.fire({
+							icon: 'error',
+							title: 'Oops...',
+							text: 'Failed to update quantity.',
+						});
+					}
+				})
+				.catch(error => {
+					Swal.fire({
+						icon: 'error',
+						title: 'Error',
+						text: 'Something went wrong while updating the quantity.',
+					});
+				});
+			});
+		});
+		document.querySelectorAll('.product-remove a').forEach(button => {
+			button.addEventListener('click', function (event) {
+				event.preventDefault(); // Prevent the default action of the anchor tag
+				const productId = this.getAttribute('data-product-id');
+	
+				axios.post(`/remove_cart_item/${productId}/`, {}, {
+					headers: {
+						'X-CSRFToken': '{{ csrf_token }}'
+					}
+				})
+				.then(response => {
+					if (response.data.success) {
+						Swal.fire({
+							icon: 'success',
+							title: 'Removed',
+							text: 'Item has been removed from your cart.',
+						});
+						// Optionally, refresh the cart view or remove the item from the DOM
+						this.closest('tr').remove(); // Remove the item from the cart table
+						calculateCartTotals(); // Recalculate totals after removing an item
+					} else {
+						Swal.fire({
+							icon: 'error',
+							title: 'Oops...',
+							text: response.data.message,
+						});
+					}
+				})
+				.catch(error => {
+					Swal.fire({
+						icon: 'error',
+						title: 'Error',
+						text: 'Something went wrong while removing the item.',
+					});
+				});
+			});
+		});
+	});
+</script>
+{% endblock %}

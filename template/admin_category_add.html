@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Category</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/admin_category_add.css' %}">
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <nav class="sidebar">
+            <div class="brand">MeatSouk</div>
+            <ul>
+                <li><a href="{% url 'admin_page' %}">Dashboard</a></li>
+                <li><a href="{% url 'user_page' %}">Users</a></li>
+                <li><a href="{% url 'admin_category' %}">Category</a></li>
+                <li><a href="{% url 'admin_product_view' %}">Products</a></li>
+                <li><a href="{% url 'admin_order_list' %}">Orders</a></li>
+                <li><a href="#">Coupons</a></li>
+                <li><a href="#">Deals</a></li>
+                <li><a href="#">Pin code</a></li>
+            </ul>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header>
+                <div class="search-bar">
+                    <input type="text" placeholder="Search for something">
+                </div>
+                <div class=" user-section">
+                    <div class="logout-btn">
+                        <a href="{% url 'admin_logout' %}">LOGOUT</a>
+                    </div>
+                    <div class="user-image">
+                        <img src="user.jpg" alt="User">
+                </div>
+            </header>
+
+            <section class="category-section">
+                <div class="category-header">
+                    <h2>Add Category</h2>
+                    <a href="{% url 'admin_category' %}" class="btn">Go Back</a>
+                </div>
+
+                <!-- Display messages for feedback -->
+                {% if messages %}
+                    <div class="messages">
+                        {% for message in messages %}
+                            <div class="alert">{{ message }}</div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                <!-- Form for adding a category -->
+                <form class="add-category-form" method="POST" enctype="multipart/form-data">
+                    {% csrf_token %}
+
+                    <!-- Display form fields -->
+                    <div class="input-group">
+                        <label for="category-name">Category Name</label>
+                        <input type="text" id="category-name" name="category_name" placeholder="Enter category name" value="{{ request.POST.category_name }}">
+                    </div>
+
+                    <div class="input-group">
+                        <label for="category-image">Category Image</label>
+                        <input type="file" id="category-image" name="category_image">
+                    </div>
+
+                    <div class="input-group">
+                        <label for="is-listed">Is Listed?</label>
+                        <input type="checkbox" id="is-listed" name="is_listed" {% if request.POST.is_listed %}checked{% endif %}>
+                    </div>
+
+                    <!-- Display error messages, if any -->
+                    {% if form.errors %}
+                        <div class="error-messages">
+                            <ul>
+                                {% for field, errors in form.errors.items %}
+                                    {% for error in errors %}
+                                        <li>{{ error }}</li>
+                                    {% endfor %}
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    {% endif %}
+
+                    <button type="submit">Add Now</button>
+                </form>
+            </section>
+        </main>
+    </div>
+</body>
+</html>

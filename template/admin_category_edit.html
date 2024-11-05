@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Category</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/admin_category_edit.css' %}">
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <nav class="sidebar">
+            <div class="brand">MeatSouk</div>
+            <ul>
+                <li><a href="{% url 'admin_page' %}">Dashboard</a></li>
+                <li><a href="{% url 'user_page' %}">Users</a></li>
+                <li><a href="{% url 'admin_category' %}">Category</a></li>
+                <li><a href="{% url 'admin_product_view' %}">Products</a></li>
+                <li><a href="{% url 'admin_order_list' %}">Orders</a></li>
+                <li><a href="#">Coupons</a></li>
+                <li><a href="#">Deals</a></li>
+                <li><a href="#">Pin code</a></li>
+            </ul>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header>
+                <div class="search-bar">
+                    <input type="text" placeholder="Search for something">
+                </div>
+                <div class=" user-section">
+                    <div class="logout-btn">
+                        <a href="{% url 'admin_logout' %}">LOGOUT</a>
+                    </div>
+                    <div class="user-image">
+                        <img src="user.jpg" alt="User">
+                </div>
+            </header>
+
+            <section class="category-section">
+                <div class="category-header">
+                    <h2>Edit Category</h2>
+                    <a href="{% url 'admin_category' %}" class="btn">Go Back</a>
+                </div>
+
+                <!-- Display messages -->
+                {% if messages %}
+                    <div class="messages">
+                        {% for message in messages %}
+                            <div class="alert">{{ message }}</div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                <form class="edit-category-form" method="POST" action="{% url 'edit_admin_category' category.id %}" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    
+                    <div class="input-group">
+                        <label for="category-name">Category Name</label>
+                        <input type="text" id="category-name" name="category_name" value="{{ category.category_name }}" placeholder="Enter category name" required>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="category-unit">Category Unit</label>
+                        <input type="text" id="category-unit" name="category_unit" value="{{ category.category_unit }}" placeholder="Enter category unit (e.g., kg, pcs)" required>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="category-image">Category Image</label>
+                        <input type="file" id="category-image" name="category_image" accept="image/*">
+                        {% if category.category_image %}
+                            <img src="{{ category.category_image.url }}" alt="Category Image" style="width:100px; height:auto;">
+                        {% endif %}
+                    </div>
+
+                    <button type="submit">Edit Now</button>
+                </form>
+            </section>
+        </main>
+    </div>
+</body>
+</html>

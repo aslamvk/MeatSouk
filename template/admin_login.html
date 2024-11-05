@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MeatSouk - Admin Login</title>
+  {% load static %}
+  <link rel="stylesheet" href="{% static 'css/admin_login.css' %}">
+</head>
+<body>
+  <div class="login-container">
+    <div class="login-box">
+      <h1 class="logo">MeatSouk</h1>
+      <h2>Welcome admin</h2>
+      <form action="{% url 'admin_login' %}" method="post">
+        {% csrf_token %}
+        <div class="input-group">
+          <input type="text" name="username" placeholder="username" required>
+        </div>
+        <div class="input-group">
+          <input type="password" name="password" id="password" placeholder="Password" required>
+          <span class="toggle-password" onclick="togglePasswordVisibility()">
+            👁️
+          </span>
+        </div>
+        <a href="#" class="forgot-password">Forgot password?</a>
+        <button type="submit" class="login-btn">Sign in</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    function togglePasswordVisibility() {
+      const passwordInput = document.getElementById('password');
+      const passwordType = passwordInput.type === 'password' ? 'text' : 'password';
+      passwordInput.type = passwordType;
+    }
+  </script>
+</body>
+</html>
+

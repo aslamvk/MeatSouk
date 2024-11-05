@@ -1,0 +1,145 @@
+{% extends 'user/base.html' %}
+{% load static %}
+{% block title %}Home - meatsouk{% endblock %}
+
+{% block content %}
+<section class="ftco-section">
+    <div class="container">
+        <div class="row">
+            <!-- Left Column -->
+            <div class="col-xl-7 ftco-animate">
+                <!-- Address Selection -->
+                <h3 class="mb-4">Select Shipping Address</h3>
+                
+                <form action="{% url 'checkout' %}" method="post" class="address-selection-form">
+                    {% csrf_token %}
+                    <div class="row">
+                        {% if error_message %}
+                        <div class="col-md-12 alert alert-danger" role="alert">
+                            {{ error_message }}
+                        </div>
+                        {% endif %}
+                        {% for address in address %}
+                        <div class="col-md-12 address-container">
+                            <div class="form-group d-flex align-items-center justify-content-between">
+                                <div class="address-details">
+                                    <input type="radio" id="address{{ address.id }}" name="address" value="{{ address.id }}">
+                                    <label for="address{{ address.id }}">
+                                        <h4 class="address-title">{{ address.full_name }}</h4>
+										<p class="address-details">{{ address.address_type }}</p>
+										<p class="address-details">{{ address.phone_number }}</p>
+										<p class="address-details">{{ address.pincode }}</p>
+										<p class="address-details">{{ address.locality }}</p>
+                                        <p class="address-details">{{ address.address }}</p>
+                                    </label>
+                                </div>
+                                <a href="" class="btn btn-secondary">Edit</a>                            </div>
+                            <hr class="address-divider">
+                        </div>
+                        {% endfor %}
+                       
+                        <a href="{% url 'add_address_in_checkout' %}" class="btn btn-primary">Add New Address</a>
+                        
+                        
+                        
+                    </div>
+                
+                    <!-- Cart List -->
+                    <div class="cart-list mt-4">
+                      <h4>Cart Summary</h4>
+<div class="cart-items">
+    {% for cart_item in cart_items %}
+    <div class="cart-item card mb-3 p-3 shadow-sm border-0">
+        <div class="d-flex align-items-center">
+            <div class="product-image mr-3">
+                <img src="{{ cart_item.item.product.image1.url }}" alt="{{ cart_item.item.product.name }}" class="img-fluid rounded" style="width: 80px;">
+            </div>
+            <div class="product-details flex-grow-1">
+                <h5 class="mb-1">{{ cart_item.item.products.name }}</h5>
+                <span class="text-muted">Quantity: {{ cart_item.item.quantity }} {{ cart_item.item.product.category.category_unit }}</span>
+            </div>
+            <div class="total-price">
+                <span class="font-weight-bold">₹{{ cart_item.item_subtotal }}</span>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+                    </div>
+                    
+                </div>
+
+                <!-- Right Column -->
+              <!-- Right Column -->
+<div class="col-xl-5">
+    <div class="row mt-5 pt-3">
+        <div class="col-md-12 d-flex mb-5">
+            <div class="col-md-12 d-flex mb-5">
+                <div class="cart-detail cart-total p-3 p-md-4">
+                    <h3 class="billing-heading mb-4">Cart Total</h3>
+                    <p class="d-flex">
+                        <span>Subtotal</span>
+                        <span>₹{{ subtotal_price }}</span>
+                    </p>
+                    <p class="d-flex">
+                        <span>Delivery</span>
+                        <span>₹{{ delivery_charge }}</span>
+                    </p>
+            
+                    
+            
+                    <hr>
+                    <p class="d-flex total-price">
+                        <span>Total</span>
+                        <span>₹{{ total_price }}</span>
+                    </p>
+                </div>
+            </div>
+            
+        </div>
+        
+
+
+
+        <!-- Payment Method Section -->
+        <div class="col-md-12">
+            <div class="cart-detail p-3 p-md-4">
+                <h3 class="billing-heading mb-4">Payment Method</h3>
+
+                <div class="form-group">
+                    <div class="col-md-12">
+                        <div class="radio">
+                            <label><input type="radio" name="option" value="Wallet" class="mr-2"> Wallet</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <div class="col-md-12">
+                        <div class="radio">
+                            <label><input type="radio" name="option" value="Razor pay" class="mr-2"> Razor Pay</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-md-12">
+                        <div class="radio">
+                            <label><input type="radio" name="option" value="Cash on Delivery" class="mr-2"> Cash on Delivery</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-12">
+            <button type="submit" class="btn btn-primary py-3 px-4">Place an order</button>
+        </div>
+    </div>
+</div>
+
+        </div>
+    </div>
+</section>
+
+{% endblock %}

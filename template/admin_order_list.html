@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Management</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/admin_order_list.css' %}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <nav class="sidebar">
+            <div class="brand">MeatSouk</div>
+            <ul>
+                <li><a href="{% url 'admin_page' %}">Dashboard</a></li>
+                <li><a href="{% url 'user_page' %}">Users</a></li>
+                <li><a href="{% url 'admin_category' %}">Category</a></li>
+                <li><a href="#">Products</a></li>
+                <li><a href="{% url 'admin_order_list' %}">Orders</a></li>
+                <li><a href="#">Coupons</a></li>
+                <li><a href="#">Deals</a></li>
+                <li><a href="#">Pin code</a></li>
+            </ul>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header>
+                <div class="search-bar">
+                    <!-- Search form with submit button -->
+                    <form method="GET" action="{% url 'admin_product_view' %}">
+                        <input type="text" name="search_query" placeholder="Search by ID, Name, or Category" value="{{ request.GET.search_query }}">
+                        <button type="submit">Search</button>
+                    </form>
+                </div>
+                <div class="user-section">
+                    <div class="logout-btn">
+                        <a href="{% url 'admin_logout' %}">LOGOUT</a>
+                    </div>
+                    <div class="user-image">
+                        <img src="user.jpg" alt="User">
+                    </div>
+                </div>
+            </header>
+
+            <!-- Order Details Section -->
+            <section class="products-section">
+                <div class="products-header">
+                    <h2>Order Details</h2>
+                </div>
+                <div class="table-responsive">
+                    <table class="products-table">
+                        <thead>
+                            <tr>
+                                <th>Order ID</th>
+                                <th>Order Number</th>
+                                <th>Name</th>
+                                <th>Date of Order</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Loop through orders -->
+                            {% for order in orders %}
+                            <tr>
+                                <td>{{ order.id }}</td>
+                                <td>{{ order.order_number }}</td>
+                                <td>{{ order.address.full_name }}</td>
+                                <td>{{ order.created_at }}</td>
+                                <td>
+                                    <a href="{% url 'admin_single_order_details' order.id %}" class="btn btn-info">View More</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    {% if errors %}
+    <script>
+        Swal.fire({
+            title: 'Error!',
+            html: `{% for field, error_list in errors.items %}{{ error_list|join:", " }}<br>{% endfor %}`,
+            icon: 'error',
+            confirmButtonText: 'OK'
+        });
+    </script>
+    {% endif %}
+</body>
+</html>

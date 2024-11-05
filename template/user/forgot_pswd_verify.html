@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MeatSouk - OTP Verification</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/otp_verification.css' %}">
+
+    <script>
+        let timer = 60; // 1 minute in seconds
+
+        function startTimer() {
+            const timerElement = document.getElementById('timer');
+            const resendButton = document.getElementById('resend-otp');
+
+            const countdown = setInterval(() => {
+                const minutes = Math.floor(timer / 60);
+                const seconds = timer % 60;
+
+                timerElement.textContent = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+                timer--;
+
+                if (timer < 0) {
+                    clearInterval(countdown);
+                    timerElement.textContent = "OTP expired.";
+                    resendButton.disabled = false; // Enable the resend button
+                }
+            }, 1000);
+        }
+
+        // Resend OTP function
+        function resendOTP() {
+            timer = 300; // Reset timer to 5 minutes
+            document.getElementById('resend-otp').disabled = true;
+            startTimer(); // Restart the timer
+
+            // Send an AJAX request to resend OTP
+            fetch("{% url 'resend_otp' %}", { 
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ email: '{{ user.email }}' })  // Adjust if needed
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.message) {
+                    alert(data.message);
+                } else if (data.error) {
+                    alert(data.error);
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        }
+
+        window.onload = startTimer;
+    </script>
+</head>
+<body>
+    <div class="container">
+        <div class="right-side">
+            <h1>Meat Souk</h1>
+            <div class="otp-container">
+                <h2>Enter OTP</h2>
+                <p>We have sent an OTP to your email, valid for the next 5 minutes.</p>
+                <div id="timer" style="font-weight: bold; color: red;"></div>
+
+                {% if error_message %}
+                    <div class="error-message">{{ error_message }}</div>
+                {% endif %}
+
+                <div class="otp-input">
+                    <form action="{% url 'forgot_pswd_verify' %}" method="POST">
+                        {% csrf_token %}
+                        <input type="text" name="otp" placeholder="Enter OTP" required>
+                        <button type="submit">Verify</button>
+                    </form>
+                </div>
+
+                <!-- Resend OTP Button -->
+                <button id="resend-otp" class="btn" onclick="resendOTP()" disabled>Resend OTP</button>
+
+                <div class="back-link">
+                    <a href="{% url 'signup' %}">&larr; Back to Sign-up</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

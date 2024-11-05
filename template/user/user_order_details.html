@@ -1,0 +1,125 @@
+{% extends 'user/base.html' %}
+{% load static %}
+{% block title %}Order List - meatsouk{% endblock %}
+
+{% block content %} 
+
+  <section class="ftco-section bg-light">
+    <div class="container">
+      <div class="row">
+        <div class="col-md-12">
+          <div class="bg-white p-4">
+            <h3>Order #{{order.order_number}} Details</h3>
+            <div class="row">
+              <div class="col-md-8">
+                <h4>Shipping Information</h4>
+                <p><strong>Shipping Details:</strong></p>
+                <p>{{order.address.full_name}}</p>
+                <p>{{order.address.landmark}},{{order.address.district}},{{order.address.state}} {{order.address.pincode}}
+                  {{order.address.country}}
+                </p>
+                <p>phone number: {{order.address.phone_number}}</p>
+                <!-- progress bar -->
+            <!-- progress bar -->
+<div class="progress-container">
+  <div class="progress-bar-container">
+    {% if order_items.status == "Order Pending" %}
+      <div class="progress-bar bg-info" style="width: 25%;" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100">Order Pending</div>
+    {% elif order_items.status == "Order confirmed" %}
+      <div class="progress-bar bg-info" style="width: 50%;" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100">Order Confirmed</div>
+    {% elif order_items.status == "Shipped" %}
+      <div class="progress-bar bg-warning" style="width: 75%;" aria-valuenow="75" aria-valuemin="0" aria-valuemax="100">Shipped</div>
+    {% elif order_items.status == "Out For Delivery" %}
+      <div class="progress-bar bg-warning" style="width: 90%;" aria-valuenow="90" aria-valuemin="0" aria-valuemax="100">Out For Delivery</div>
+    {% elif order_items.status == "Delivered" %}
+      <div class="progress-bar bg-success" style="width: 100%;" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100">Delivered</div>
+    {% elif order_items.status == "Cancelled" %}
+      <div class="progress-bar bg-success" style="width: 100%;" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100">Cancelled</div>
+    {% endif %}
+  </div>
+</div>
+
+                
+<div class="order-actions mt-3">
+  {% if order.payment_status != "Failure" %}
+  {% if order_items.status == "Order Pending" or order_items.status == "Order confirmed" or order_items.status == "Shipped" or order_items.status == "Out For Delivery" %}
+      <!-- Show Cancel Option only if the order is not yet Delivered -->
+      <form action="{% url 'user_singleitem_cancel' order_items.id %}" method="POST">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger">Cancel Order</button>
+      </form>
+      
+  {% elif order_items.status == "Delivered" %}
+      
+  {% endif %}
+  {% endif %}
+  
+</div>
+
+         
+
+                <h4 class="mt-4">Order Items</h4>
+                <table class="table table-bordered">
+                  <thead>
+                    <tr>
+                      <th>Image</th>
+                      <th>Item Name</th>
+                      <th>Quantity</th>
+                      <th>Price</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <!-- Repeat this row for each order item -->
+                   
+                    <tr>
+                      <td><img src="{{ order_items.product.image1.url }}" alt="Item 1" class="img-fluid rounded-circle" style="width: 100px; height: 100px; object-fit: cover;"></td>
+                      <td>{{order_items.product.product_name}}</td>
+                      <td>{{order_items.quantity}} {{order_items.product.category.category_unit}}</td>
+                      <td>₹{{order_items.subtotal_price }}</td>
+                    </tr>
+                   
+                    <!-- End repeat -->
+                  </tbody>
+                </table>
+                
+                <h4 class="mt-4">Total Amount</h4>
+                <p><strong>₹{{order_items.subtotal_price }}</strong></p>
+                
+
+
+<!-- Review Submission Form -->
+{% if  order_items.status == "Delivered" or  order_items.status == "Reject Returned"  %}
+<h5 class="mt-4">Submit Your Review</h5>
+
+<form action="" method="POST">
+  <div class="form-group">
+    <label for="rating">Rating:</label>
+    <div class="review-stars" id="review-stars">
+        <span class="star" data-value="1">&#9733;</span>
+        <span class="star" data-value="2">&#9733;</span>
+        <span class="star" data-value="3">&#9733;</span>
+        <span class="star" data-value="4">&#9733;</span>
+        <span class="star" data-value="5">&#9733;</span>
+    </div>
+    <input type="hidden" name="rating" id="rating" required>
+  </div>
+  <div class="form-group">
+    <label for="review">Your Review:</label>
+    <textarea name="review" id="review" class="form-control" rows="3" placeholder="Write your review here..." required></textarea>
+  </div>
+  <button type="submit" class="btn btn-primary">Submit Review</button>
+</form>
+
+{% else %}
+
+{% endif %}
+
+              </div>
+              
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  {% endblock %}

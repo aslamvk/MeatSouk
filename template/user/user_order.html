@@ -1,0 +1,78 @@
+{% extends 'user/base.html' %}
+{% load static %}
+{% block title %}Order List - meatsouk{% endblock %}
+
+{% block content %}
+<style>
+    .orders-container {
+        background-color: white;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    .orders-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+    
+    .orders-table thead th {
+        padding: 12px 20px;
+        background-color: #f8f9fa;
+        font-weight: 600;
+    }
+    
+    .orders-table tbody td {
+        padding: 12px 20px;
+        border-top: 1px solid #dee2e6;
+    }
+    
+    .btn-info {
+        background-color: #6c63ff;
+        color: white;
+        border-radius: 20px;
+        padding: 6px 12px;
+    }
+</style>
+<section class="ftco-section bg-light">
+    <div class="container">
+        <div class="row justify-content-center mb-5">
+            <div class="col-md-10">
+                <h3 class="mb-4 text-center">Your Orders</h3>
+                
+                <!-- Add a white background container -->
+                <div class="orders-container p-4">
+                    <div class="table-responsive">
+                        <table class="orders-table">
+                            <thead>
+                                <tr>
+                                    <th>Order ID</th>
+                                    <th>Order Number</th>
+                                    <th>Date of Order</th>
+                                    <th>Total Price</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for order in orders %}
+                                <tr>
+                                    <td>{{ order.id }}</td>
+                                    <td>{{ order.order_number }}</td>
+                                    <td>{{ order.created_at }}</td>
+                                    <td>{{ order.total_price }}</td>
+                                    <td>
+                                        <a href="{% url 'user_single_order_items' order.id %}" class="btn btn-info">View Details</a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <!-- End white background container -->
+                
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

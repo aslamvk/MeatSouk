@@ -1,0 +1,78 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Arial', sans-serif;
+}
+
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background-color: #f9f9f9;
+}
+
+.container {
+    text-align: center;
+    background-color: white;
+    padding: 40px;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+h1, h2 {
+    color: #6A45C3;
+    margin-bottom: 20px;
+}
+
+.pincode-input {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.pincode-box {
+    width: 40px;
+    height: 40px;
+    margin: 0 5px;
+    text-align: center;
+    font-size: 24px;
+    border: 2px solid #6A45C3;
+    border-radius: 4px;
+    outline: none;
+}
+
+.pincode-box:focus {
+    border-color: #4C2B9E;
+}
+
+.district-select {
+    margin-top: 20px;
+}
+
+.location-box {
+    width: 200px;
+    padding: 10px;
+    font-size: 16px;
+    border: 2px solid #6A45C3;
+    border-radius: 4px;
+    outline: none;
+}
+
+.location-box::placeholder {
+    color: #bbb;
+}
+
+@media (max-width: 768px) {
+    .pincode-box {
+        width: 30px;
+        height: 30px;
+        font-size: 20px;
+    }
+
+    .location-box {
+        width: 150px;
+        font-size: 14px;
+    }
+}

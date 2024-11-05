@@ -1,0 +1,199 @@
+{% extends 'user/base.html' %}
+{% load static %}
+{% block title %}Single-product-meatsouk{% endblock %}
+
+{% block content %}
+<div class="breadcrumb-wrap" style="padding: 15px 0; background-color: #f8f9fa; border-bottom: 1px solid #ddd;">
+    <div class="container">
+        <p class="breadcrumbs" style="font-size: 18px; font-weight: 500; color: #333; margin: 0; display: flex; align-items: center;">
+            <span class="mr-2" style="margin-right: 10px; color: #82ae46; display: flex; align-items: center;">
+                <a href="{% url 'homepage' %}" style="color: #82ae46; text-decoration: none; display: flex; align-items: center;">
+                    <i class="fas fa-home" style="font-size: 16px; margin-right: 5px;"></i> Home
+                </a>
+            </span>
+            <span class="mr-2" style="margin-right: 10px; color: #82ae46; display: flex; align-items: center;">
+                <i class="fas fa-chevron-right" style="font-size: 16px; margin-right: 5px;"></i>
+            </span>
+            <span style="color: #82ae46;">
+                <a href="{% url 'shop' %}" style="color: #82ae46; text-decoration: none;">Shop</a>
+                <i class="fas fa-chevron-right" style="font-size: 16px; margin-right: 5px;"></i>
+            </span>
+            <span style="color: #555;">
+                <a href="" style="color: #555; text-decoration: none;">{{ product.product_name }}</a>
+            </span>
+        </p>
+    </div>
+</div>
+
+<section class="ftco-section">
+    
+    <div class="container">
+        <div class="row">
+            <!-- Product Image Carousel -->
+            <div class="col-lg-6 mb-5 ftco-animate">
+                <div id="productImageCarousel" class="carousel slide" data-ride="carousel">
+                    <!-- Indicators -->
+                    <ol class="carousel-indicators">
+                        <li data-target="#productImageCarousel" data-slide-to="0" class="active"></li>
+                        <li data-target="#productImageCarousel" data-slide-to="1"></li>
+                        <li data-target="#productImageCarousel" data-slide-to="2"></li>
+                    </ol>
+                
+                    <!-- Wrapper for slides -->
+                    <div class="carousel-inner">
+                        <div class="carousel-item active">
+                            <a href="{{ product.image1.url }}" class="image-popup">
+                                <img src="{{ product.image1.url }}" class="d-block w-100" alt="Main Product Image" style="max-width: 80%; margin: auto;">
+                            </a>
+                        </div>
+                        <div class="carousel-item">
+                            <a href="{{ product.image2.url }}" class="image-popup">
+                                <img src="{{ product.image2.url }}" class="d-block w-100" alt="Additional Image 1" style="max-width: 80%; margin: auto;">
+                            </a>
+                        </div>
+                        <div class="carousel-item">
+                            <a href="{{ product.image3.url }}" class="image-popup">
+                                <img src="{{ product.image3.url }}" class="d-block w-100" alt="Additional Image 2" style="max-width: 80%; margin: auto;">
+                            </a>
+                        </div>
+                    </div>
+                
+                    <!-- Controls -->
+                    <a class="carousel-control-prev" href="#productImageCarousel" role="button" data-slide="prev">
+                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                        <span class="sr-only">Previous</span>
+                    </a>
+                    <a class="carousel-control-next" href="#productImageCarousel" role="button" data-slide="next">
+                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                        <span class="sr-only">Next</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Product Details -->
+            <div class="col-lg-6 product-details pl-md-5 ftco-animate">
+                <h3>{{product.product_name}}</h3>
+                <div class="rating d-flex">
+                    <p class="text-left mr-4">
+                        <a href="#" class="mr-2">5.0</a>
+                        <a href="#"><span class="ion-ios-star-outline"></span></a>
+                        <a href="#"><span class="ion-ios-star-outline"></span></a>
+                        <a href="#"><span class="ion-ios-star-outline"></span></a>
+                        <a href="#"><span class="ion-ios-star-outline"></span></a>
+                        <a href="#"><span class="ion-ios-star-outline"></span></a>
+                    </p>
+                    <p class="text-left mr-4">
+                        <a href="#" class="mr-2" style="color: #000;">100 <span style="color: #bbb;">Rating</span></a>
+                    </p>
+                </div>
+                <div class="d-flex">
+                    <div class="pricing">
+                        <p class="price">
+                            <span class="mr-2 price-dc"></span>
+                            <span class="price-sale">₹{{ product.price }}</span>
+                        </p>
+                    </div>
+                    
+                </div>
+                {% if product.category.is_listed and product.is_listed%}
+                <p>{{product.description}}</p>
+                <div class="row mt-4">
+                    <div class="col-md-6">
+                        <div class="form-group d-flex">
+                        </div>
+                    </div>
+                    <div class="w-100"></div>
+
+                    <div class="w-100"></div>
+                    <div class="col-md-12">
+                    {% if product.stock <= 0 %}
+                        <p style="color: red;">Out of Stock</p>
+                    {% else %}
+                        <p style="color: #000;">{{ product.stock }}{{ product.category.category_unit }} available</p>
+                    {% endif %}                    </div>
+                </div>
+                <p>
+                    {% if product.stock <= 0 %}
+                        <a id="addToCartBtn" class="btn btn-black py-3 px-5" href="#" role="button" style="pointer-events: none; cursor: not-allowed; opacity: 0.5;">
+                            Out of Stock
+                        </a>
+                    {% else %}
+                        <a id="addToCartBtn" class="btn btn-black py-3 px-5" href="#" role="button">
+                            Add to Cart
+                        </a>
+                    {% endif %}
+                    {% if user.is_authenticated %}
+                    <a  class="btn btn-outline-secondary py-3 px-5" href="" role="button" style="margin-left: 10px;">
+                        Add to Wishlist
+                    </a>
+                    {% endif %}
+                </p>
+                
+
+
+             {% else %}
+                <p>{{product.description}}</p>
+                <div class="row mt-4">
+                    <div class="col-md-6">
+                        <div class="form-group d-flex">
+                        </div>
+                    </div>
+                    <div class="w-100"></div>
+                    
+                  
+
+                    <div class="w-100"></div>
+                    <div class="col-md-12">
+                    </div>
+                </div>
+                <p>
+                    <a href="#" class="btn btn-black py-3 px-5" style="pointer-events: none; cursor: not-allowed;">
+                        Add to Cart
+                    </a>
+                </p>
+                        {% endif %}
+        </div>
+    </div>
+</section>
+
+<script>
+    document.getElementById('addToCartBtn').addEventListener('click', function() {
+        const productId = {{ product.id }};
+        const quantity = 0.5;
+        console.log(productId);
+        
+        fetch("{% url 'add_to_cart' %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: `product_id=${productId}&quantity=${quantity}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                Swal.fire({
+                            icon: 'success',
+                            title: 'Success',
+                            text: data.message,
+                            showConfirmButton: true,  // Show the 'OK' button
+                            confirmButtonText: 'OK',  // Text for the 'OK' button
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                window.location.reload(); // Reload the page when 'OK' is clicked
+                            }
+                        });
+            } else {
+                Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: data.message,
+    });
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    });
+    </script>
+
+{% endblock %}

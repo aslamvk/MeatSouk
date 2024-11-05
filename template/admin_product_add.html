@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Product</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/admin_product_add.css' %}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <nav class="sidebar">
+            <div class="brand">MeatSouk</div>
+            <ul>
+                <li><a href="{% url 'admin_page' %}">Dashboard</a></li>
+                <li><a href="{% url 'user_page' %}">Users</a></li>
+                <li><a href="{% url 'admin_category' %}">Category</a></li>
+                <li><a href="{% url 'admin_product_view' %}">Products</a></li>
+                <li><a href="{% url 'admin_order_list' %}">Orders</a></li>
+                <li><a href="#">Coupons</a></li>
+                <li><a href="#">Deals</a></li>
+                <li><a href="#">Pin code</a></li>
+            </ul>
+        </nav>
+
+        <main class="main-content">
+            <header>
+                <div class="search-bar">
+                    
+                </div>
+                <div class=" user-section">
+                    <div class="logout-btn">
+                        <a href="{% url 'admin_logout' %}">LOGOUT</a>
+                    </div>
+                    <div class="user-image">
+                        <img src="user.jpg" alt="User">
+                </div>
+            </header>
+
+            <section class="products-section">
+                <h2>Add Products</h2>
+
+                <!-- Display error message if present -->
+                {% if error_message %}
+                    <div class="error-message">{{ error_message }}</div>
+                {% endif %}
+
+                <form class="add-product-form" method="POST" enctype="multipart/form-data" onsubmit="return validateForm()">
+                    {% csrf_token %}
+                    <div class="photo-upload">
+                        <!-- Image Upload Fields -->
+                        <div class="col-md-3">
+                            <input type="file" name="image1" class="form-control" id="image1" accept="image/*" onchange="previewSelectedImage(this, 'preview1', event)">
+                            {% if product.image1 %}
+                                <img id="preview1" src="{{ product.image1.url }}" class="img-thumbnail mt-2" style="max-width: 100px; max-height: 100px;">
+                            {% else %}
+                                <img id="preview1" class="img-thumbnail mt-2" style="display: none; max-width: 100px; max-height: 100px;">
+                            {% endif %}
+                        </div>
+                        <div class="col-md-3">
+                            <input type="file" name="image2" class="form-control" id="image2" accept="image/*" onchange="previewSelectedImage(this, 'preview2', event)">
+                            {% if product.image2 %}
+                                <img id="preview2" src="{{ product.image2.url }}" class="img-thumbnail mt-2" style="max-width: 100px; max-height: 100px;">
+                            {% else %}
+                                <img id="preview2" class="img-thumbnail mt-2" style="display: none; max-width: 100px; max-height: 100px;">
+                            {% endif %}
+                        </div>
+                        <div class="col-md-3">
+                            <input type="file" name="image3" class="form-control" id="image3" accept="image/*" onchange="previewSelectedImage(this, 'preview3', event)">
+                            {% if product.image3 %}
+                                <img id="preview3" src="{{ product.image3.url }}" class="img-thumbnail mt-2" style="max-width: 100px; max-height: 100px;">
+                            {% else %}
+                                <img id="preview3" class="img-thumbnail mt-2" style="display: none; max-width: 100px; max-height: 100px;">
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <input type="text" name="product_name" placeholder="Product Name" required>
+                        
+                        <!-- Category Dropdown -->
+                        <select name="category" required>
+                            <option value="">Select Category</option>
+                            {% for category in categories %}
+                                <option value="{{ category.id }}">{{ category.category_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <input type="number" name="price" placeholder="Price" min="0" required>
+                        <input type="number" name="stock" placeholder="Stock" min="0" required>
+                    </div>
+
+                    <div class="form-group">
+                        <textarea name="product_description" placeholder="Description" rows="4" required></textarea>
+                    </div>
+                    <!-- Pincode Selection Modal Trigger -->
+                    <div class="form-group">
+                        <label for="pincode">Available in Pincodes</label><br>
+                        <button type="button" onclick="openPincodeModal()">Select Pincodes</button>
+                    </div>
+
+                    <!-- Pincode Selection Modal -->
+                    <div id="pincodeModal" class="modal">
+                        <div class="modal-content">
+                            <span class="close-button" onclick="closePincodeModal()">&times;</span>
+                            <h3>Select Available Pincodes</h3>
+                            <div id="pincode-options">
+                                {% for pincode in pincodes %}
+                                    <label>
+                                        <input type="checkbox" name="pincodes" value="{{ pincode.id }}"
+                                        {% if pincode.id in product_pincodes %}checked{% endif %}>
+                                        {{ pincode.pincode }} - {{ pincode.city }}, {{ pincode.district }}, {{ pincode.state }}
+                                    </label><br>
+                                {% endfor %}
+                            </div>
+                            <button type="button" onclick="closePincodeModal()">Save Selection</button>
+                        </div>
+                    </div>
+
+                    <div class="submit-btn">
+                        <button type="submit">Add Now</button>
+                    </div>
+                </form>
+            </section>
+        </main>
+    </div>
+
+    <div id="imageOverlay">
+        <div class="crop-container">
+            <img id="cropImage" alt="Image for cropping">
+            <button id="cropButton">Crop</button>
+            <button id="closeOverlayButton">Close</button>
+        </div>
+    </div>
+
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.js"></script>
+    <script>
+        let cropperInstance = null;
+        let currentImageInput = null;
+        
+        function previewSelectedImage(input, imageId) {
+            currentImageInput = input;
+            const file = input.files[0];
+        
+            if (file && file.type.startsWith('image/')) {
+                const reader = new FileReader();
+        
+                reader.onload = function (e) {
+                    openCropperOverlay(e.target.result);
+                };
+        
+                reader.readAsDataURL(file);
+            } else {
+                alert('Please upload a valid image file.');
+            }
+        }
+        
+        function openCropperOverlay(imageSrc) {
+            const cropImage = document.getElementById('cropImage');
+            const imageOverlay = document.getElementById('imageOverlay');
+        
+            if (cropperInstance) {
+                cropperInstance.destroy();
+                cropperInstance = null;
+            }
+        
+            cropImage.src = imageSrc;  
+            imageOverlay.style.display = "flex"; 
+        
+            cropImage.onload = function() {
+                cropperInstance = new Cropper(cropImage, {
+                    aspectRatio: 1,
+                    viewMode: 1,
+                    autoCropArea: 1,
+                });
+            };
+        }
+        
+        document.getElementById('cropButton').addEventListener('click', function () {
+            if (cropperInstance) {
+                const canvas = cropperInstance.getCroppedCanvas({ width: 300, height: 300 });
+        
+                if (canvas) {
+                    canvas.toBlob(function (blob) {
+                        const croppedImage = new File([blob], currentImageInput.files[0].name, { type: 'image/png' });
+                        const dataTransfer = new DataTransfer();
+                        dataTransfer.items.add(croppedImage);
+                        currentImageInput.files = dataTransfer.files;
+        
+                        const imgPreviewId = 'preview' + currentImageInput.id.slice(-1);
+                        document.getElementById(imgPreviewId).src = URL.createObjectURL(croppedImage);
+                        document.getElementById(imgPreviewId).style.display = "block"; 
+                        document.getElementById('imageOverlay').style.display = "none";
+                    }, 'image/png');
+                }
+            }
+        });
+        
+        document.getElementById('closeOverlayButton').addEventListener('click', function () {
+            document.getElementById('imageOverlay').style.display = "none";
+            if (cropperInstance) {
+                cropperInstance.destroy();
+                cropperInstance = null;
+            }
+        });
+    </script>
+    <script>
+        function openPincodeModal() {
+            document.getElementById("pincodeModal").style.display = "block";
+        }
+    
+        function closePincodeModal() {
+            document.getElementById("pincodeModal").style.display = "none";
+        }
+    
+        // Close modal when clicking outside of it
+        window.onclick = function(event) {
+            const modal = document.getElementById("pincodeModal");
+            if (event.target == modal) {
+                modal.style.display = "none";
+            }
+        }
+    </script>
+</body>
+</html>

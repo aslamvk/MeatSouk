@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Users</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/admin_user_page.css' %}">
+</head>
+<body>
+    <div class="container">
+
+        <!-- Sidebar -->
+        <nav class="sidebar">
+            <div class="brand">Meatsouk</div>
+            <ul>
+                <li><a href="{% url 'admin_page' %}">Dashboard</a></li>
+                <li><a href="#">Users</a></li>
+                <li><a href="{% url 'admin_category' %}">Category</a></li>
+                <li><a href="{% url 'admin_product_view' %}">Products</a></li>
+                <li><a href="{% url 'admin_order_list' %}">Orders</a></li>
+                <li><a href="#">Coupons</a></li>
+                <li><a href="#">Deals</a></li>
+                <li><a href="#">Pin code</a></li>
+            </ul>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header>
+                <div class="search-bar">
+                    <form method="GET" action="{% url 'user_page' %}">
+                        <input type="text" name="search" placeholder="Search User" value="{{ request.GET.search }}">
+                        <button type="submit">Search</button>
+                    </form>
+                </div>
+                <div class=" user-section">
+                    <div class="logout-btn">
+                        <a href="{% url 'admin_logout' %}">LOGOUT</a>
+                    </div>
+                    <div class="user-image">
+                        <img src="user.jpg" alt="User">
+                </div>
+            </header>
+
+            <section class="users-section">
+                <h2>Users</h2>
+
+                {% if error_message %}
+                    <p>{{ error_message }}</p>
+                {% else %}
+                    <table class="users-table">
+                        <thead>
+                            <tr>
+                                <th>Username</th>
+                                <th>First Name</th>
+                                <th>Last Name</th>
+                                <th>Email</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user in users %}
+                            <tr>
+                                <td>{{ user.username }}</td>
+                                <td>{{ user.first_name }}</td>
+                                <td>{{ user.last_name }}</td>
+                                <td>{{ user.email }}</td>
+                                <td>
+                                    <form method="POST" action="{% if user.is_active %}{% url 'block_user' user.id %}{% else %}{% url 'unblock_user' user.id %}{% endif %}">
+                                        {% csrf_token %}
+                                        <button type="submit" class="block-btn">
+                                            {% if user.is_active %}
+                                                Block
+                                            {% else %}
+                                                Unblock
+                                            {% endif %}
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% endif %}
+            </section>
+        </main>
+    </div>
+</body>
+</html>

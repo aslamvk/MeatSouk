@@ -1,0 +1,46 @@
+{% extends 'user/base.html' %}
+{% load static %}
+{% block title %}meatsouk{% endblock %}
+
+{% block content %} 
+
+  <div class="hero-wrap hero-bread" style="background-image: url({% static "images/nowshop.jpg" %});">
+    <div class="container">
+      <div class="row no-gutters slider-text align-items-center justify-content-center">
+        <div class="col-md-12 ftco-animate text-center">
+          <p class="breadcrumbs"><span class="mr-2"><a href="{% url 'homepage' %}">Home</a></span> <span>My Profile</span></p>
+          <h1 class="mb-0 bread">My Profile</h1>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <section class="ftco-section contact-section bg-light">
+    <div class="container">
+      <div class="row mb-5">
+        <div class="col-md-4">
+          <div class="bg-white p-4">
+            <h3>Account Management</h3>
+            <ul class="list-unstyled">
+              <li><a href="#profile-management" class="btn btn-link">Profile Management</a></li>
+              <li><a href="{% url 'address' user.id %}" class="btn btn-link">Address Management</a></li>
+            </ul>
+          </div>
+        </div>
+        <div class="col-md-8">
+          <div class="bg-white p-4 profile-container">
+            <h3>Profile Details</h3>
+            <p><strong>Username:</strong> {{ user.username }}</p>
+            <p><strong>First Name:</strong> {{ user.first_name }}</p>
+            <p><strong>Last Name:</strong> {{ user.last_name }}</p>
+            <p><strong>Email:</strong> {{ user.email }}</p>
+            <hr>
+            <div class="d-flex justify-content-between align-items-center">
+              <a href="{% url 'profile_update' id=user.id %}" class="btn btn-primary py-3 px-5">Update Account</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+{% endblock %}

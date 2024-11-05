@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Pincode</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/admin_pincode_add.css' %}">
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <nav class="sidebar">
+            <div class="brand">MeatSouk</div>
+            <ul>
+                <li><a href="{% url 'admin_page' %}">Dashboard</a></li>
+                <li><a href="{% url 'user_page' %}">Users</a></li>
+                <li><a href="{% url 'admin_category' %}">Category</a></li>
+                <li><a href="{% url 'admin_product_view' %}">Products</a></li>
+                <li><a href="{% url 'admin_order_list' %}">Orders</a></li>
+                <li><a href="#">Coupons</a></li>
+                <li><a href="#">Deals</a></li>
+                <li><a href="{% url 'admin_pincode' %}">Pin code</a></li>
+            </ul>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header>
+                <div class="user-section">
+                    <div class="logout-btn">
+                        <a href="{% url 'admin_logout' %}">LOGOUT</a>
+                    </div>
+                    <div class="user-image">
+                        <img src="user.jpg" alt="User">
+                    </div>
+                </div>
+            </header>
+
+            <section class="pincode-section">
+                <div class="pincode-header">
+                    <h2>Add Pincode</h2>
+                    <a href="{% url 'admin_pincode' %}" class="btn">Go Back</a>
+                </div>
+
+                <!-- Display error message if exists -->
+                {% if error_message %}
+                    <div class="error-message">
+                        {{ error_message }}
+                    </div>
+                {% endif %}
+
+                <!-- Form for adding a pincode -->
+                <form class="add-pincode-form" method="POST">
+                    {% csrf_token %}
+                    <div class="input-group">
+                        <label for="pincode">Pincode</label>
+                        <input type="text" id="pincode" name="pincode" placeholder="Enter pincode" maxlength="6">
+                    </div>
+
+                    <div class="input-group">
+                        <label for="city">City</label>
+                        <input type="text" id="city" name="city" placeholder="Enter city">
+                    </div>
+
+                    <div class="input-group">
+                        <label for="district">District</label>
+                        <input type="text" id="district" name="district" placeholder="Enter district">
+                    </div>
+
+                    <div class="input-group">
+                        <label for="state">State</label>
+                        <input type="text" id="state" name="state" placeholder="Enter state">
+                    </div>
+
+                    <div class="input-group">
+                        <label for="is-listed">Is Listed?</label>
+                        <input type="checkbox" id="is-listed" name="is_listed">
+                    </div>
+
+                    <button type="submit">Add Now</button>
+                </form>
+            </section>
+        </main>
+    </div>
+</body>
+</html>

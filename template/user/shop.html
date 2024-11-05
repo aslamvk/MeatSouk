@@ -1,0 +1,116 @@
+{% extends 'user/base.html' %}
+{% load static %}
+{% block title %}Shop-Meatsouk{% endblock %}
+
+{% block content %}
+    <div class="hero-wrap hero-bread" style="background-image: url('{% static "images/nowshop.jpg" %}');">
+      <div class="container">
+        <div class="row no-gutters slider-text align-items-center justify-content-center">
+          <div class="col-md-9 ftco-animate text-center">
+          	<p class="breadcrumbs"><span class="mr-2"><a href="{% url 'homepage' %}">Home</a></span> <span>Products</span></p>
+            <h1 class="mb-0 bread">Products</h1>
+          </div>
+        </div>
+      </div>
+    </div>
+	<div class="breadcrumb-wrap" style="padding: 15px 0; background-color: #f8f9fa; border-bottom: 1px solid #ddd;">
+		<div class="container">
+			<p class="breadcrumbs" style="font-size: 18px; font-weight: 500; color: #333; margin: 0; display: flex; align-items: center;">
+				<span class="mr-2" style="margin-right: 10px; color: #7e57c2; display: flex; align-items: center;">
+					<a href="{% url 'homepage' %}" style="color: #7e57c2; text-decoration: none; display: flex; align-items: center;">
+						<i class="fas fa-home" style="font-size: 16px; margin-right: 5px;"></i> Home
+					</a>
+				</span>
+				<span class="mr-2" style="margin-right: 10px; color: #7e57c2; display: flex; align-items: center;">
+					<i class="fas fa-chevron-right" style="font-size: 16px; margin-right: 5px;"></i>
+				</span>
+				<span style="color: #555;">Shop</span>
+			</p>
+		</div>
+	</div>
+
+	<div class="container mt-4">
+        <form method="get" action="{% url 'shop' %}">
+            <div class="row align-items-center">
+				<div class="col-md-4">
+					<form method="GET" action="{% url 'shop' %}"> 
+						<select name="sort" class="select-box select-box--transparent-b-2" onchange="this.form.submit()" style="height: 35px; width: 255px; border-radius: 15px;">
+							<option value="" disabled selected hidden>Sort By</option>
+							<option value="price_asc" {% if sort_option == 'price_asc' %}selected{% endif %}>Price (Low to High)</option>
+							<option value="price_desc" {% if sort_option == 'price_desc' %}selected{% endif %}>Price (High to Low)</option>
+							<option value="name_asc" {% if sort_option == 'name_asc' %}selected{% endif %}>Product (A to Z)</option>
+							<option value="name_desc" {% if sort_option == 'name_desc' %}selected{% endif %}>Product (Z to A)</option>
+						</select>
+					</form>
+	            </div>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <section class="ftco-section">
+    	<div class="container">
+    		<div class="row justify-content-center">
+    			<div class="col-md-10 mb-5 text-center">
+					{% if search_query %}
+    				<p>Search results for "{{ search_query }}":</p>
+					{% endif %}
+					<ul class="product-category">
+						<li><a href="?category=All" class="{% if selected_category == 'All' %}active{% endif %}">All</a></li>
+						{% for category in categories %}
+							<li><a href="?category={{ category.category_name }}" class="{% if selected_category == category.category_name %}active{% endif %}">{{ category.category_name }}</a></li>
+						{% endfor %}
+					</ul>
+				</div>
+    		</div>
+    		<div class="row">
+				{%  for product in products %}
+    			<div class="col-md-6 col-lg-3 ftco-animate">
+    				<div class="product">
+						
+    					<a href="{% url 'single_product' product.id %}" class="img-prod">
+							<img class="img-fluid" src="{{ product.image1.url }}" alt="{{ product.product_name }}">
+						</a>
+						
+    					<div class="text py-3 pb-4 px-3 text-center">
+    						<h3><a href="">{{product.product_name}}</a></h3>
+    						<div class="d-flex">
+    							<div class="pricing">
+		    						<p class="price"><span class="mr-2 price-dc"></span><span class="price-sale">₹{{product.price}}</span></p>
+		    					</div>
+	    					</div>
+    					</div>
+    				</div>
+    			</div>
+				{% empty %}
+  					<p>No products available.</p>
+				{% endfor %}
+			</div>				
+    		<div class="row mt-5">
+          <div class="col text-center">
+            <div class="block-27">
+              <ul>
+                <li><a href="#">&lt;</a></li>
+                <li class="active"><span>1</span></li>
+                <li><a href="#">2</a></li>
+                <li><a href="#">3</a></li>
+                <li><a href="#">4</a></li>
+                <li><a href="#">5</a></li>
+                <li><a href="#">&gt;</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+    	</div>
+    </section>
+<script>
+	function updateLabel(select) {
+		console.log("updateLabel function triggered");
+		var label = document.getElementById("sortLabel");
+		label.innerText = select.options[select.selectedIndex].text;
+
+		select.form.submit();
+	}
+</script>
+	
+{% endblock %}
