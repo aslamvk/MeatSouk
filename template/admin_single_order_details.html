@@ -45,6 +45,7 @@
                         <p><strong>Payment Status:</strong> {{ order.payment_status }}</p>
                         <p><strong>Total Price:</strong> {{ order.total_price }}</p>
                         <p><strong>Created At:</strong> {{ order.created_at }}</p>
+                        <p><strong>Coupon Code:</strong> {{ order.coupon_code }}</p>
                         <p><strong>Estimated Delivery:</strong> {{ order.estimated_delivery }}</p>
                     </div>
 
@@ -77,6 +78,11 @@
                                     <th>Quantity</th>
                                     <th>Price</th>
                                     <th>Status</th>
+                                    {% if item.status == "Requested Return" %}
+            
+                                    {% else %}
+                                    <th>Message</th>
+                                    {% endif %}
                                     <th>Subtotal</th>
                                 </tr>
                             </thead>
@@ -85,17 +91,51 @@
                                 <tr>
                                     <td>{{ item.product.product_name }}</td>
                                     <td>{{ item.quantity }}</td>
-                                    <td>₹{{ item.price }}</td>
+                                    <td>₹{{ item.subtotal_price }}</td>
                                     <td>
                                         <select class="form-control" name="status_{{ item.id }}">
-                                            <option value="Order Pending" {% if item.status == "Order Pending" %}selected{% endif %}>Order Pending</option>
-                                            <option value="Order confirmed" {% if item.status == "Order confirmed" %}selected{% endif %}>Order confirmed</option>
-                                            <option value="Shipped" {% if item.status == "Shipped" %}selected{% endif %}>Shipped</option>
-                                            <option value="Out For Delivery" {% if item.status == "Out For Delivery" %}selected{% endif %}>Out For Delivery</option>
-                                            <option value="Delivered" {% if item.status == "Delivered" %}selected{% endif %}>Delivered</option>
-                                            <option value="Cancelled" {% if item.status == "Cancelled" %}selected{% endif %}>Cancelled</option>
+                                            {% if item.status == "Order Pending" %}
+                                                <option value="Order Pending" selected>Order Pending</option>
+                                                <option value="Order confirmed">Order confirmed</option>
+                                                <option value="Shipped">Shipped</option>
+                                                <option value="Out For Delivery">Out For Delivery</option>
+                                                <option value="Delivered">Delivered</option>
+                                                <option value="Cancelled">Cancelled</option>
+                                            {% elif item.status == "Order confirmed" %}
+                                                <option value="Order confirmed" selected>Order confirmed</option>
+                                                <option value="Shipped">Shipped</option>
+                                                <option value="Out For Delivery">Out For Delivery</option>
+                                                <option value="Delivered">Delivered</option>
+                                                <option value="Cancelled">Cancelled</option>
+                                            {% elif item.status == "Shipped" %}
+                                                <option value="Shipped" selected>Shipped</option>
+                                                <option value="Out For Delivery">Out For Delivery</option>
+                                                <option value="Delivered">Delivered</option>
+                                                <option value="Cancelled">Cancelled</option>
+                                            {% elif item.status == "Out For Delivery" %}
+                                                <option value="Out For Delivery" selected>Out For Delivery</option>
+                                                <option value="Delivered">Delivered</option>
+                                                <option value="Cancelled">Cancelled</option>
+                                            {% elif item.status == "Delivered" %}
+                                                <option value="Delivered" selected>Delivered</option>
+                                            {% elif item.status == "Cancelled" %}
+                                                <option value="Cancelled" selected>Cancelled</option>
+                                            {% elif item.status == "Requested Return" %}
+                                                <option value="Approve Return" selected>Approve Return</option>
+                                                <option value="Reject Returned" selected>Reject Returned</option>
+                                            {% elif item.status == "Approve Return" %}
+                                                <option value="Approve Return" selected>Approve Return</option>
+                                            {% elif item.status == "Reject Returned" %}
+                                                <option value="Reject Returned" selected>Reject Returned(Delivered)</option>
+                                            {% endif %}
                                         </select>
                                     </td>
+                                    
+                                    {% if item.status == "Requested Return" %}
+                                    <td><strong class="twinkle-text">{{ item.return_reason }}</strong></td>
+                                    {% else %}
+                                    <td></td>
+                                    {% endif %}
                                     <td>₹{{ item.subtotal_price }}</td>
                                 </tr>
                                 {% endfor %}

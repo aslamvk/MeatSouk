@@ -1,0 +1,124 @@
+/* Sidebar Styling */
+.sidebar {
+    width: 200px;
+    height: 100vh;
+    position: fixed;
+    top: 0;
+    left: 0;
+    background-color: #2C3E50;
+    padding-top: 20px;
+    color: #fff;
+}
+
+.sidebar .brand {
+    font-size: 24px;
+    font-weight: bold;
+    text-align: center;
+    padding-bottom: 20px;
+}
+
+.sidebar ul {
+    list-style: none;
+    padding: 0;
+}
+
+.sidebar ul li {
+    margin: 20px 0;
+}
+
+.sidebar ul li a {
+    color: #fff;
+    text-decoration: none;
+    display: block;
+    padding: 10px 20px;
+    font-size: 16px;
+}
+
+.sidebar ul li a:hover {
+    background-color: #444;
+    border-radius: 4px;
+}
+
+/* Main Content Styling */
+.main-content {
+    margin-left: 200px;
+    padding: 20px;
+}
+
+.header {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    background-color: #f8f9fa;
+    padding: 10px 20px;
+    border-bottom: 1px solid #ddd;
+}
+
+.user-section {
+    display: flex;
+    align-items: center;
+    margin-left: 1225px;
+}
+
+/* Logout button on the right with red background */
+.logout-btn {
+    margin-left: 10px;
+}
+
+.logout-btn a {
+    color: #fff;
+    background-color: #dc3545; /* Red background */
+    padding: 5px 15px;
+    border-radius: 4px;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.logout-btn a:hover {
+    background-color: #c82333; /* Darker red on hover */
+}
+
+.user-section .user-image img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    margin-left: 10px;
+}
+
+/* Offer Section Styling */
+.content-wrapper {
+    padding-top: 20px;
+}
+
+.offer-section {
+    background-color: #ffffff;
+    border: 1px solid #ddd;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+}
+
+.offer-section h3 {
+    font-size: 24px;
+    font-weight: bold;
+    color: #333;
+}
+
+.offer-section p {
+    font-size: 16px;
+    color: #666;
+    margin: 10px 0 20px;
+}
+
+.offer-section .btn-primary {
+    background-color: #007bff;
+    border-color: #007bff;
+    padding: 10px 20px;
+    font-size: 16px;
+}
+
+.offer-section .btn-primary:hover {
+    background-color: #0056b3;
+    border-color: #0056b3;
+}

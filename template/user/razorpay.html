@@ -1,0 +1,54 @@
+{% extends 'user/base.html' %}
+{% block title %}Razorpay Payment{% endblock %}
+{% block content %}
+<section class="ftco-section">
+    <div class="container">
+        <h3 class="mb-4">Complete Your Payment</h3>
+        <form id="razorpay-payment-form" method="post" action="{% url 'razorpay_payment' %}">
+            {% csrf_token %}
+            <input type="hidden" name="razorpay_order_id" value="{{ razorpay_order_id }}">
+            <input type="hidden" name="razorpay_payment_id" id="razorpay_payment_id">
+            <input type="hidden" name="razorpay_signature" id="razorpay_signature">
+            <input type="hidden" name="payment_status" id="payment_status" value="Failed">
+        </form>
+
+        <button id="pay-button" class="btn btn-primary">Pay Now</button>
+    </div>
+</section>
+
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+    var options = {
+        "key": "{{ razorpay_key_id }}",
+        "amount": "{{ amount|floatformat:0 }}", 
+        "currency": "INR",
+        "order_id": "{{ razorpay_order_id }}", 
+        "handler": function (response) {
+            // Set the payment details and status to 'Success'
+            document.getElementById('razorpay_payment_id').value = response.razorpay_payment_id;
+            document.getElementById('razorpay_signature').value = response.razorpay_signature;
+            document.getElementById('payment_status').value = "Success";
+            document.getElementById('razorpay-payment-form').submit();
+        },
+        "prefill": {
+            "name": "{{ user.get_full_name }}",
+            "email": "{{ user.email }}",
+            "contact": "{{ user.profile.phone_number }}"
+        },
+        "modal": {
+            "ondismiss": function () {
+                // If the modal is closed, submit the form with the status 'Failed'
+                document.getElementById('razorpay-payment-form').submit();
+            }
+        }
+    };
+
+    var rzp1 = new Razorpay(options);
+
+    document.getElementById('pay-button').onclick = function(e){
+        rzp1.open();
+        e.preventDefault();
+    };
+</script>
+
+{% endblock %}

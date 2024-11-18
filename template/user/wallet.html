@@ -1,0 +1,69 @@
+{% extends 'user/base.html' %}
+{% load static %}
+{% block title %}Home - meatsouk{% endblock %}
+
+{% block content %}
+<section class="ftco-section bg-light">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="debit-card p-4 mb-4 shadow-sm rounded" style="background: #9159d9; color: white;">
+                    <div class="brand" style="font-size: 1.5rem; font-weight: bold;">meatsouk</div>
+                    <div class="card-number mt-2" style="font-size: 1.2rem;">**** **** **** 1234</div>
+                    <div class="balance mt-3" style="font-size: 2rem; font-weight: bold;">₹{{wallet.balance}}</div>
+                </div>
+                
+                <!-- Filter Dropdown Button -->
+                <div class="d-flex justify-content-end mb-3">
+                    <div class="dropdown">
+                        <button class="btn btn-secondary dropdown-toggle" type="button" id="filterDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            Filter Transactions
+                        </button>
+                        <ul class="dropdown-menu" aria-labelledby="filterDropdown">
+                            <li><a class="dropdown-item" href="?filter=all">All</a></li>
+                            <li><a class="dropdown-item" href="?filter=debited">Debited</a></li>
+                            <li><a class="dropdown-item" href="?filter=refund">Refund</a></li>
+                            <li><a class="dropdown-item" href="?filter=cancellation">Cancellation</a></li>
+                        </ul>
+                    </div>
+                </div>
+
+                <table class="table table-hover table-striped table-bordered text-center transactions-table">
+                    <thead class="thead-dark">
+                        <tr>
+                            
+                            <th>Amount</th>
+                            <th>Type</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for transaction in wallet_details %}
+                        <tr>
+                           
+                            <td>
+                                <span 
+                                    style="{% if transaction.transaction_type|lower == 'debited' %}color: red;{% elif transaction.transaction_type|lower == 'refund' or transaction.transaction_type|lower == 'cancellation' %}color: green;{% endif %}">
+                                    {% if transaction.transaction_type|lower == 'debited' %}
+                                        - ₹{{ transaction.amount }}
+                                    {% else %}
+                                        + ₹{{ transaction.amount }}
+                                    {% endif %}
+                                </span>
+                            </td>
+                            <td>
+                                <span 
+                                    style="{% if transaction.transaction_type|lower == 'credit' %}color: green;{% elif transaction.transaction_type|lower == 'debited' %}color: red;{% elif transaction.transaction_type|lower == 'refund' %}color: green;{% elif transaction.transaction_type|lower == 'cancellation' %}color: green;{% endif %}">
+                                    {{ transaction.transaction_type|capfirst }}
+                                </span>
+                            </td>
+                            <td>{{ transaction.created_at }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

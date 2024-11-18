@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales Report</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/sales_report.css' %}">
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <nav class="sidebar">
+            <div class="brand">meatsouk</div>
+            <ul>
+                <li><a href="#">Dashboard</a></li>
+                <li><a href="{% url 'user_page' %}">Users</a></li>
+                <li><a href="{% url 'admin_category' %}">Category</a></li>
+                <li><a href="{% url 'admin_product_view' %}">Products</a></li>
+                <li><a href="{% url 'admin_order_list' %}">Orders</a></li>
+                <li><a href="{% url 'coupon' %}">Coupons</a></li>
+                <li><a href="{% url 'admin_offer_management' %}">Offer</a></li>
+                <li><a href="#">Pin code</a></li>
+                <li><a href="#">Sales reprot</a></li>
+            </ul>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <header>
+                <div></div> <!-- Empty div for spacing -->
+                <div class="user-section">
+                    <a href="{% url 'admin_logout' %}" class="logout-btn">LOGOUT</a>
+                    <img src="{% static 'images/user.jpg' %}" alt="User" class="user-img">
+                </div>
+            </header>
+
+            <!-- Sales Report Content -->
+            <div class="content-wrapper">
+                <!-- Metrics Summary Cards -->
+                <div class="metrics-grid">
+                    <div class="metric-card filtered-stats">
+                        <div class="metric-title">Filtered Revenue</div>
+                        <div class="metric-value">₹{{ total_revenue|floatformat:2 }}</div>
+                    </div>
+                    <div class="metric-card filtered-stats">
+                        <div class="metric-title">Filtered Units Sold</div>
+                        <div class="metric-value">{{ total_units_sold }}</div>
+                    </div>
+                    <div class="metric-card overall-stats">
+                        <div class="metric-title">Total Orders (All Time)</div>
+                        <div class="metric-value">{{ total_orders_count }}</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-title">Overall Order Amount</div>
+                        <div class="metric-value">₹{{ total_order_amount|floatformat:2 }}</div>
+                    </div>
+                    <div class="metric-card overall-stats">
+                        <div class="metric-title">Total Discount (All Time)</div>
+                        <div class="metric-value">₹{{ total_discount_all|floatformat:2 }}</div>
+                    </div>
+                </div>
+
+                <!-- Filters Section -->
+                <div class="filters-container">
+                    <!-- Sort by dropdown with auto-submit -->
+                    <form method="get" class="row g-3">
+                        <div class="col-md-3">
+                            <label for="startdate" class="form-label">Start Date</label>
+                            <input type="date" class="form-control" name="startdate" id="startdate" value="{{ startdate|default:'' }}">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="enddate" class="form-label">End Date</label>
+                            <input type="date" class="form-control" name="enddate" id="enddate" value="{{ enddate|default:'' }}">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="sortOption" class="form-label">Sort By</label>
+                            <select class="form-select" name="sortOption" id="sortOption">
+                                <option value="">Select</option>
+                                <option value="day" {% if sortOption == 'day' %}selected{% endif %}>Day</option>
+                                <option value="week" {% if sortOption == 'week' %}selected{% endif %}>Week</option>
+                                <option value="month" {% if sortOption == 'month' %}selected{% endif %}>Month</option>
+                                <option value="year" {% if sortOption == 'year' %}selected{% endif %}>Year</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3 align-self-end">
+                            <button type="submit" class="btn btn-primary w-100">Apply Filter</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Sales Table Section -->
+                <div class="table-container">
+                    <div class="table-header">
+                        <h2>Sales Report Table</h2>
+                        <div class="export-buttons">
+                            <button class="export-btn">PDF</button>
+                            <button class="export-btn">Excel</button>
+                        </div>
+                    </div>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Total Sales Revenue</th>
+                                <th>Total Discount</th>
+                                <th>Net Sales</th>
+                                <th>Total Units Sold</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for report in sales_report %}
+                            <tr>
+                                <td>{{ report.date }}</td>
+                                <td>{{ report.total_sales_revenue|floatformat:2 }}</td>
+                                <td>{{ report.total_discount|floatformat:2 }}</td>
+                                <td>{{ report.net_sales|floatformat:2 }}</td>
+                                <td>{{ report.total_units_sold }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+</body>
+</html>

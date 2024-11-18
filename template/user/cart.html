@@ -90,7 +90,13 @@
                     </p>
                     {% endif %}
                 </div>
-                <p><a href="{% url 'checkout' %}" class="btn btn-primary py-3 px-4">Proceed to Checkout</a></p>
+                <p>
+					<a href="{% url 'checkout' %}" 
+					   class="btn btn-primary py-3 px-4 {% if not items %}disabled{% endif %}" 
+					   id="checkout-btn">
+					   Proceed to Checkout
+					</a>
+				</p>
             </div>
         </div>
     </div>
@@ -99,36 +105,55 @@
 
 <script>
 	document.addEventListener('DOMContentLoaded', function () {
-
+		// Initialize cart totals and button state
 		calculateCartTotals();
-
+		updateCheckoutButton();
+	
+		// Function to calculate cart totals
 		function calculateCartTotals() {
 			let subtotal = 0;
+	
 			// Loop through each row to calculate individual product totals
 			document.querySelectorAll('.table tbody tr').forEach(function(row) {
 				const quantitySpan = row.querySelector('.quantity-value');
 				const priceSpan = row.querySelector('.price');
 				const totalSpan = row.querySelector('.total');
-
+	
 				const quantity = parseFloat(quantitySpan.textContent);
 				const price = parseFloat(priceSpan.textContent.replace('₹', '').replace(',', ''));
 				const total = price * quantity; // Calculate the total for this product
-
+	
 				// Update the total cell
 				totalSpan.textContent = '₹' + total.toFixed(2);
 				subtotal += total; // Add to the subtotal
 			});
-
+	
 			// Calculate delivery charge
 			const deliveryCharge = subtotal > 500 ? 0 : 40;
 			const total = subtotal + deliveryCharge;
-
+	
 			// Update the subtotal and total in the cart summary
 			document.getElementById('subtotal').textContent = '₹' + subtotal.toFixed(2);
 			document.getElementById('delivery').textContent = '₹' + deliveryCharge.toFixed(2);
 			document.getElementById('total').textContent = '₹' + total.toFixed(2);
 		}
-
+	
+		// Function to update checkout button state
+		function updateCheckoutButton() {
+			const checkoutBtn = document.getElementById('checkout-btn');
+			const cartRows = document.querySelectorAll('.table tbody tr');
+	
+			// Check if the cart is empty (no rows present)
+			if (cartRows.length > 0) {
+				checkoutBtn.classList.remove('disabled');
+				checkoutBtn.removeAttribute('disabled');
+			} else {
+				checkoutBtn.classList.add('disabled');
+				checkoutBtn.setAttribute('disabled', 'disabled');
+			}
+		}
+	
+		// Quantity update event
 		document.querySelectorAll('.btn-plus, .btn-minus').forEach(button => {
 			button.addEventListener('click', function () {
 				const productId = this.getAttribute('data-product-id');
@@ -137,7 +162,7 @@
 				const errorSpan = this.closest('td').querySelector('.error-msg');
 				let quantity = parseFloat(quantitySpan.textContent);
 				let stock = parseFloat(stockSpan.textContent.replace('Available: ', '').replace(' kg', ''));
-
+	
 				if (this.classList.contains('btn-plus')) {
 					if (quantity < stock && quantity < 6) {
 						quantity += 0.5;
@@ -149,15 +174,13 @@
 					quantity -= 0.5;
 					errorSpan.style.display = 'none';
 				}
-
+	
 				quantitySpan.textContent = quantity.toFixed(1);
-
-				const price = parseFloat(this.closest('tr').querySelector('.price').textContent.replace('₹', ''));
-				const total = price * quantity;
-				this.closest('tr').querySelector('.total').textContent = '₹' + total.toFixed(2);
-
+	
 				calculateCartTotals();
-
+				updateCheckoutButton();
+	
+				// Send AJAX request to update quantity
 				axios.post('/update-quantity/', {
 					product_id: productId,
 					quantity: quantity
@@ -184,6 +207,8 @@
 				});
 			});
 		});
+	
+		// Remove product event
 		document.querySelectorAll('.product-remove a').forEach(button => {
 			button.addEventListener('click', function (event) {
 				event.preventDefault(); // Prevent the default action of the anchor tag
@@ -201,9 +226,10 @@
 							title: 'Removed',
 							text: 'Item has been removed from your cart.',
 						});
-						// Optionally, refresh the cart view or remove the item from the DOM
-						this.closest('tr').remove(); // Remove the item from the cart table
-						calculateCartTotals(); // Recalculate totals after removing an item
+						// Remove the item from the cart table
+						this.closest('tr').remove();
+						calculateCartTotals();
+						updateCheckoutButton();
 					} else {
 						Swal.fire({
 							icon: 'error',
@@ -223,4 +249,6 @@
 		});
 	});
 </script>
+	
+	
 {% endblock %}

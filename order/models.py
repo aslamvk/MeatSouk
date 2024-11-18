@@ -25,6 +25,8 @@ class Order(models.Model):
     payment_type = models.CharField(max_length=100, choices=PAYMENT_CHOICES)
     payment_status = models.CharField(max_length=100, choices=PAYMENT_STATUS,default='Pending')
     estimated_delivery = models.TimeField(blank=True, null=True)
+    discount_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    coupon_code = models.CharField(max_length=50, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -37,15 +39,15 @@ class Order(models.Model):
 
 class OrderItem(models.Model):
     STATUS = [
-        ('order pending', 'order pending'),
-        ('order confirmed', 'order confirmed'),
-        ('shipped', 'shipped'),
-        ('out for delivery', 'out for delivery'),
-        ('delivered', 'delivered'),
-        ('cancelled', 'cancelled'),
-        ('requested return', 'requested return'),
-        ('approve return', 'approve return'),
-        ('reject return', 'reject return'),
+        ('Order Pending', 'Order Pending'),
+        ('Order Confirmed', 'Order Confirmed'),
+        ('Shipped', 'Shipped'),
+        ('Out For Delivery', 'Out For Delivery'),
+        ('Delivered', 'Delivered'),
+        ('Cancelled', 'Cancelled'),
+        ('Requested Return', 'Requested Return'),
+        ('Approve Return', 'Approve Return'),
+        ('Reject Return', 'Reject Return'),
     
     ]
 

@@ -57,6 +57,10 @@ INSTALLED_APPS = [
     'address',
     'cart',
     'order',
+    'wallet',
+    'coupon',
+    'wishlist',
+    'offer',
 ]
 
 SITE_ID = 1
@@ -183,3 +187,9 @@ ACCOUNT_LOGOUT_REDIRECT_URL = 'login'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+SECURE_CROSS_ORIGIN_OPENER_POLICY = "same-origin-allow-popups"
+
+
+RAZORPAY_KEY_ID = 'rzp_test_RinZLeDSBs1uWZ'
+RAZORPAY_KEY_SECRET = 'lYTMDduiDcD9MIvKqhVuLESL'

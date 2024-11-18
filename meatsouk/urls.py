@@ -32,6 +32,10 @@ urlpatterns = [
     path('admin_pincode/', include('pincode.urls')),
     path('', include('cart.urls')),
     path('checkout/', include('order.urls')),
+    path('wallet/', include('wallet.urls')),
+    path('coupon/', include('coupon.urls')),
+    path('wishlist/', include('wishlist.urls')),
+    path('offer/', include('offer.urls')),
 ]
 
 # Serve media files during development

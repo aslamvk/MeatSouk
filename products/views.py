@@ -6,6 +6,8 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from django.views.decorators.cache import never_cache
 from pincode.models import Pincode
+from offer.models import Product_Offers, Category_Offers
+from datetime import datetime
 # Create your views here.
 
 @login_required(login_url='admin_login')
@@ -211,9 +213,48 @@ def shop(request):
     elif sort_option == 'name_desc':
         products = products.order_by('-product_name')
 
+    now = datetime.now()
+    products_with_offers = []
+
+    for product in products:
+        # Get product-specific and category-specific offers
+        product_offer = Product_Offers.objects.filter(
+            product=product, valid_from__lte=now, valid_to__gte=now
+        ).first()
+        category_offer = Category_Offers.objects.filter(
+            category=product.category, valid_from__lte=now, valid_to__gte=now
+        ).first()
+
+        product_discount = (
+            (product_offer.offer_discount / product.price) * 100 if product_offer else 0
+        )
+        category_discount = (
+            (category_offer.offer_discount / product.price) * 100 if category_offer else 0
+        )
+
+        # Determine the best offer
+        best_offer = None
+        final_price = product.price
+        discount_percentage = 0
+        if product_discount > category_discount:
+            best_offer = product_offer
+            final_price = product.price - product_offer.offer_discount
+            discount_percentage = product_discount
+        elif category_discount > 0:
+            best_offer = category_offer
+            final_price = product.price - category_offer.offer_discount
+            discount_percentage = category_discount
+
+        products_with_offers.append({
+            'product': product,
+            'best_offer': best_offer,
+            'final_price': final_price,
+            'discount_percentage': round(discount_percentage, 2),
+        })
+
     context = {
         'categories': categories,
-        'products': products,
+        'products': products_with_offers,
         'selected_category': selected_category,
         'search_query': search_query,
         'sort_option': sort_option,
@@ -228,7 +269,41 @@ def shop(request):
 def product_details(request,product_id):
     product = get_object_or_404(Products,id=product_id)
     username = request.user.username
-    return render(request,'user/product-single.html', {'product':product,'username': username})
+
+    now = datetime.now()
+    product_offer = Product_Offers.objects.filter(
+        product=product, valid_from__lte=now, valid_to__gte=now
+    ).first()
+    category_offer = Category_Offers.objects.filter(
+        category=product.category, valid_from__lte=now, valid_to__gte=now
+    ).first()
+    product_discount = (
+        (product_offer.offer_discount / product.price) * 100 if product_offer else 0
+    )
+    category_discount = (
+        (category_offer.offer_discount / product.price) * 100 if category_offer else 0
+    )
+
+    best_offer = None
+    final_price = product.price
+    discount_percentage = 0
+    if product_discount > category_discount:
+        best_offer = product_offer
+        final_price = product.price - product_offer.offer_discount
+        discount_percentage = product_discount
+    elif category_discount > 0:
+        best_offer = category_offer
+        final_price = product.price - category_offer.offer_discount
+        discount_percentage = category_discount
+
+    context = {
+        'product': product,
+        'best_offer': best_offer,
+        'final_price': final_price,
+        'username': username,
+        'discount_percentage': round(discount_percentage, 2),
+    }
+    return render(request,'user/product-single.html', context)
 
 def unlist_product(request, product_id):
     user = Products.objects.get(id=product_id)

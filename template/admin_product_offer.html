@@ -1,0 +1,180 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Product Offers Management</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="{% static 'css/admin_coupon.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker.min.css" />
+</head>
+
+<body>
+<div class="container-fluid">
+    <!-- Sidebar -->
+    <nav class="sidebar">
+        <div class="brand">meatsouk</div>
+        <ul>
+            <li><a href="{% url 'admin_page' %}">Dashboard</a></li>
+            <li><a href="{% url 'user_page' %}">Users</a></li>
+            <li><a href="{% url 'admin_category' %}">Category</a></li>
+            <li><a href="#">Products</a></li>
+            <li><a href="{% url 'admin_order_list' %}">Orders</a></li>
+            <li><a href="{% url 'coupon' %}">Coupons</a></li>
+            <li><a href="{% url 'admin_offer_management' %}">Offer</a></li>
+            <li><a href="{% url 'admin_pincode' %}">Pin code</a></li>
+            <li><a href="#">Sales reprot</a></li>
+        </ul>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <header>
+            <div class="search-bar">
+                <input type="text" placeholder="Search for something">
+            </div>
+            <div class="user-section">
+                <div class="logout-btn">
+                    <a href="{% url 'admin_logout' %}">LOGOUT</a>
+                </div>
+                <div class="user-image">
+                    <img src="user.jpg" alt="User">
+                </div>
+            </div>
+        </header>
+
+        <div class="content-wrapper">
+            <!-- Create New Offer Button -->
+            <div class="mb-4">
+                <button class="btn btn-success" data-toggle="modal" data-target="#createOfferModal">
+                    + Create New Offer
+                </button>
+            </div>
+            {% if messages %}
+                <div class="container mt-3">
+                    {% for message in messages %}
+                        <div class="alert {% if message.tags %}alert-{{ message.tags }}{% else %}alert-info{% endif %} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <!-- Modal for creating new offer -->
+            <div class="modal fade" id="createOfferModal" tabindex="-1" role="dialog" aria-labelledby="createOfferModalLabel" aria-hidden="true">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="createOfferModalLabel">Create New Offer</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <!-- Form for creating new offer -->
+                            <form method="POST" action="">
+                                {% csrf_token %}
+                                <div class="form-group">
+                                    <label for="offer_name">Offer Name</label>
+                                    <input type="text" class="form-control" id="offer_name" name="offer_name" maxlength="30" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="product">Product</label>
+                                    <select class="form-control" id="product" name="product" required>
+                                        {% for product in products %}
+                                            <option value="{{ product.id }}">{{ product.product_name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="offer_discount">Offer Price</label>
+                                    <input type="number" step="0.01" class="form-control" id="offer_discount" name="offer_discount" max="9999999999" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="valid_from">Valid From</label>
+                                    <input type="text" class="form-control datepicker" id="valid_from" name="valid_from" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="valid_to">Valid To</label>
+                                    <input type="text" class="form-control datepicker" id="valid_to" name="valid_to" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="offer_details">Offer Details</label>
+                                    <textarea class="form-control" id="offer_details" name="offer_details"></textarea>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                                    <button type="submit" class="btn btn-primary">Create Offer</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Existing Offers Table -->
+            <div class="row">
+                <div class="col-12 grid-margin">
+                    <div class="card">
+                        <div class="card-body">
+                            <h4 class="card-title">Product Offers Details</h4>
+                            <div class="table-responsive">
+                                <table class="table">
+                                    <thead>
+                                    <tr>
+                                        <th>Id</th>
+                                        <th>Product Image</th>
+                                        <th>Product Name</th>
+                                        <th>Offer Name</th>
+                                        <th>Offer Details</th>
+                                        <th>Start Date</th>
+                                        <th>End Date</th>
+                                        <th>Action</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    {% for offer in prodcut_offer %}
+                                        <tr>
+                                            <td>{{ offer.id }}</td>
+                                            <td><img src="{{ offer.product.image1.url }}" alt="{{ offer.product.product_name }}" width="50"></td>
+                                            <td>{{ offer.product.product_name }}</td>
+                                            <td>{{ offer.offer_name }}</td>
+                                            <td>{{ offer.offer_details }}</td>
+                                            <td>{{ offer.valid_from }}</td>
+                                            <td>{{ offer.valid_to }}</td>
+                                            <td>
+                                                <a href="{% url 'edit_product_offer' offer.id %}" class="btn btn-primary">Edit</a>
+                                                <a href="{% url 'delete_product_offer' offer.id %}" class="btn btn-danger">Delete</a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Scripts -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/js/bootstrap-datepicker.min.js"></script>
+<script>
+    $(document).ready(function() {
+        $('.datepicker').datepicker({
+            format: 'yyyy-mm-dd',
+            autoclose: true,
+            todayHighlight: true
+        });
+    });
+</script>
+</body>
+</html>

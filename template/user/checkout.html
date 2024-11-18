@@ -19,6 +19,7 @@
                             {{ error_message }}
                         </div>
                         {% endif %}
+                        
                         {% for address in address %}
                         <div class="col-md-12 address-container">
                             <div class="form-group d-flex align-items-center justify-content-between">
@@ -26,120 +27,213 @@
                                     <input type="radio" id="address{{ address.id }}" name="address" value="{{ address.id }}">
                                     <label for="address{{ address.id }}">
                                         <h4 class="address-title">{{ address.full_name }}</h4>
-										<p class="address-details">{{ address.address_type }}</p>
-										<p class="address-details">{{ address.phone_number }}</p>
-										<p class="address-details">{{ address.pincode }}</p>
-										<p class="address-details">{{ address.locality }}</p>
+                                        <p class="address-details">{{ address.address_type }}</p>
+                                        <p class="address-details">{{ address.phone_number }}</p>
+                                        <p class="address-details">{{ address.pincode }}</p>
+                                        <p class="address-details">{{ address.locality }}</p>
                                         <p class="address-details">{{ address.address }}</p>
                                     </label>
                                 </div>
-                                <a href="" class="btn btn-secondary">Edit</a>                            </div>
+                                <a href="" class="btn btn-secondary">Edit</a>
+                            </div>
                             <hr class="address-divider">
                         </div>
                         {% endfor %}
-                       
+                        
                         <a href="{% url 'add_address_in_checkout' %}" class="btn btn-primary">Add New Address</a>
-                        
-                        
-                        
                     </div>
                 
                     <!-- Cart List -->
                     <div class="cart-list mt-4">
-                      <h4>Cart Summary</h4>
-<div class="cart-items">
-    {% for cart_item in cart_items %}
-    <div class="cart-item card mb-3 p-3 shadow-sm border-0">
-        <div class="d-flex align-items-center">
-            <div class="product-image mr-3">
-                <img src="{{ cart_item.item.product.image1.url }}" alt="{{ cart_item.item.product.name }}" class="img-fluid rounded" style="width: 80px;">
-            </div>
-            <div class="product-details flex-grow-1">
-                <h5 class="mb-1">{{ cart_item.item.products.name }}</h5>
-                <span class="text-muted">Quantity: {{ cart_item.item.quantity }} {{ cart_item.item.product.category.category_unit }}</span>
-            </div>
-            <div class="total-price">
-                <span class="font-weight-bold">₹{{ cart_item.item_subtotal }}</span>
-            </div>
-        </div>
-    </div>
-    {% endfor %}
-</div>
-
+                        <h4>Cart Summary</h4>
+                        <div class="cart-items">
+                            {% for cart_item in cart_items %}
+                            <div class="cart-item card mb-3 p-3 shadow-sm border-0">
+                                <div class="d-flex align-items-center">
+                                    <div class="product-image mr-3">
+                                        <img src="{{ cart_item.item.product.image1.url }}" alt="{{ cart_item.item.product.name }}" class="img-fluid rounded" style="width: 80px;">
+                                    </div>
+                                    <div class="product-details flex-grow-1">
+                                        <h5 class="mb-1">{{ cart_item.item.products.name }}</h5>
+                                        <span class="text-muted">Quantity: {{ cart_item.item.quantity }} {{ cart_item.item.product.category.category_unit }}</span>
+                                    </div>
+                                    <div class="total-price">
+                                        <span class="font-weight-bold">₹{{ cart_item.item_subtotal }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
                     </div>
-                    
-                </div>
+                
+                <!-- End Left Column -->
+            </div>
 
-                <!-- Right Column -->
-              <!-- Right Column -->
-<div class="col-xl-5">
-    <div class="row mt-5 pt-3">
-        <div class="col-md-12 d-flex mb-5">
-            <div class="col-md-12 d-flex mb-5">
-                <div class="cart-detail cart-total p-3 p-md-4">
-                    <h3 class="billing-heading mb-4">Cart Total</h3>
-                    <p class="d-flex">
-                        <span>Subtotal</span>
-                        <span>₹{{ subtotal_price }}</span>
-                    </p>
-                    <p class="d-flex">
-                        <span>Delivery</span>
-                        <span>₹{{ delivery_charge }}</span>
-                    </p>
-            
-                    
-            
-                    <hr>
-                    <p class="d-flex total-price">
-                        <span>Total</span>
-                        <span>₹{{ total_price }}</span>
-                    </p>
+            <!-- Right Column -->
+            <div class="col-xl-5">
+                <div class="row mt-5 pt-3">
+                    <div class="col-md-12 d-flex mb-5">
+                        <div class="cart-detail cart-total p-3 p-md-4">
+                            <h3 class="billing-heading mb-4">Cart Total</h3>
+                            <p class="d-flex">
+                                <span>Subtotal</span>
+                                <span>₹{{ subtotal_price }}</span>
+                            </p>
+                            <p class="d-flex">
+                                <span>Delivery</span>
+                                <span>₹{{ delivery_charge }}</span>
+                            </p>
+
+                            {% if request.session.coupon_code %}
+                            <p class="d-flex" style="color: green;">
+                                <span>You saved</span> 
+                                <span>₹{{ request.session.discount_value }}</span>
+                            </p>
+                            {% endif %}
+
+                            <hr>
+                            <p class="d-flex total-price">
+                                <span>Total</span>
+                                <span>₹{{ total_price }}</span>
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Coupon Section -->
+                    <div class="col-md-12">
+                        <div class="cart-detail p-3 p-md-4 shadow-sm border">
+                            <h3 class="billing-heading mb-4">Apply Coupon</h3>
+                            
+                            <div class="form-group">
+                                <label for="coupon-code">Coupon Code</label>
+                                <input type="text" id="coupon-code" name="coupon_code" class="form-control text-left px-3" placeholder="Enter coupon code">
+                <span class="input-group-text bg-white border-0" >
+                            <a href="#" data-bs-toggle="modal" data-bs-target="#couponsModal" class="text-decoration-none" >see available coupons</a>
+                        </span>            </div>
+                            <div id="coupon-action" class="d-flex justify-content-between">
+                                <a id="apply-coupon-btn" class="btn btn-primary py-2 px-3" style="display: {% if request.session.coupon_code %}none{% else %}block{% endif %};">Apply Coupon</a>
+                                <a id="remove-coupon-btn" class="btn btn-danger py-2 px-3" style="display: {% if request.session.coupon_code %}block{% else %}none{% endif %};">Remove Coupon</a>
+                            </div>
+                            
+                            <div id="coupon-message" class="mt-3"></div> <!-- For displaying messages -->
+                        </div>
+                    </div>
+
+                    <!-- Payment Method Section -->
+                    <div class="col-md-12">
+                        <div class="cart-detail p-3 p-md-4">
+                            <h3 class="billing-heading mb-4">Payment Method</h3>
+                            <div class="form-group">
+                                <div class="col-md-12">
+                                    <div class="radio">
+                                        <label><input type="radio" name="option" value="Wallet" class="mr-2"> Wallet</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <div class="col-md-12">
+                                    <div class="radio">
+                                        <label><input type="radio" name="option" value="Razor pay" class="mr-2"> Razor Pay</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <div class="col-md-12">
+                                    <div class="radio">
+                                        <label><input type="radio" name="option" value="Cash on Delivery" class="mr-2"> Cash on Delivery</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-12">
+                        <button type="submit" class="btn btn-primary py-3 px-4">Place an order</button>
+                    </div>
                 </div>
             </div>
-            
-        </div>
+        </form>
         
-
-
-
-        <!-- Payment Method Section -->
-        <div class="col-md-12">
-            <div class="cart-detail p-3 p-md-4">
-                <h3 class="billing-heading mb-4">Payment Method</h3>
-
-                <div class="form-group">
-                    <div class="col-md-12">
-                        <div class="radio">
-                            <label><input type="radio" name="option" value="Wallet" class="mr-2"> Wallet</label>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <div class="col-md-12">
-                        <div class="radio">
-                            <label><input type="radio" name="option" value="Razor pay" class="mr-2"> Razor Pay</label>
-                        </div>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <div class="col-md-12">
-                        <div class="radio">
-                            <label><input type="radio" name="option" value="Cash on Delivery" class="mr-2"> Cash on Delivery</label>
-                        </div>
-                    </div>
-                </div>
-            </div>
         </div>
+    </div>
+        <!-- Bootstrap Modal -->
+<div class="modal fade" id="couponsModal" tabindex="-1" aria-labelledby="couponsModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="couponsModalLabel"> Coupons</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <!-- Coupon details will be displayed here -->
+          <ul>
         
-        <div class="col-md-12">
-            <button type="submit" class="btn btn-primary py-3 px-4">Place an order</button>
+            {% for coupon in coupon %}
+            <li>{{coupon.code}}</li>
+            {% endfor %}
+          </ul>
         </div>
-    </div>
-</div>
-
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
         </div>
+      </div>
     </div>
+  </div>
 </section>
-
+<script>
+    // Event listener for applying coupon
+    document.getElementById('apply-coupon-btn').addEventListener('click', function() {
+         const couponCode = document.getElementById('coupon-code').value;
+ 
+         fetch("{% url 'apply_coupon' %}", {
+             method: 'POST',
+             headers: {
+                 'Content-Type': 'application/json',
+                 'X-CSRFToken': '{{ csrf_token }}'
+             },
+             body: JSON.stringify({ coupon_code: couponCode, cart_total: {{ subtotal_price|floatformat:2 }} })
+         })
+         .then(response => response.json())
+         .then(data => {
+             const messageDiv = document.getElementById('coupon-message');
+             if (data.success) {
+                 messageDiv.innerHTML = `Coupon applied successfully!`;
+                 // Optionally refresh the page or update the total price
+                 location.reload(); // Reload to reflect new total
+             } else {
+                 messageDiv.innerHTML = `Error: ${data.error}`;
+             }
+         })
+         .catch(error => {
+             console.error('Error:', error);
+             document.getElementById('coupon-message').innerHTML = 'An error occurred. Please try again.';
+         });
+     });
+ 
+     // Event listener for removing coupon
+     document.getElementById('remove-coupon-btn').addEventListener('click', function() {
+         fetch("{% url 'remove_coupon' %}", {
+             method: 'POST',
+             headers: {
+                 'Content-Type': 'application/json',
+                 'X-CSRFToken': '{{ csrf_token }}'
+             }
+         })
+         .then(response => response.json())
+         .then(data => {
+             const messageDiv = document.getElementById('coupon-message');
+             if (data.success) {
+                 messageDiv.innerHTML = `Coupon removed successfully!`;
+                 // Optionally refresh the page or update the total price
+                 location.reload(); // Reload to reflect new total
+             } else {
+                 messageDiv.innerHTML = `Error: ${data.error}`;
+             }
+         })
+         .catch(error => {
+             console.error('Error:', error);
+             document.getElementById('coupon-message').innerHTML = 'An error occurred. Please try again.';
+         });
+     });
+ </script>
 {% endblock %}

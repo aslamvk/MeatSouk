@@ -3,6 +3,63 @@
 {% block title %}Shop-Meatsouk{% endblock %}
 
 {% block content %}
+<style>
+    .product {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        height: 380px; /* Set a fixed height for the product cards */
+        border: 1px solid #ddd;
+        border-radius: 10px;
+        padding: 10px;
+        box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .product:hover {
+        transform: scale(1.05);
+        box-shadow: 0px 6px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .product .img-prod {
+        height: 200px; /* Fixed height for product images */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .product .img-prod img {
+        max-height: 100%; /* Keep the image inside the container */
+        max-width: 100%;
+        object-fit: contain; /* Ensure the image does not distort */
+    }
+
+    .product .text {
+        flex-grow: 1; /* Ensures text area takes up the available space */
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+
+    .product .text h3 {
+        font-size: 18px;
+        font-weight: 500;
+        margin-bottom: 10px;
+        text-overflow: ellipsis;
+        overflow: hidden;
+        white-space: nowrap; /* Truncate long product names */
+    }
+
+    .product .text .pricing {
+        font-size: 14px;
+        color: #555;
+    }
+
+    .product .text .pricing p {
+        margin: 0;
+    }
+</style>
+
     <div class="hero-wrap hero-bread" style="background-image: url('{% static "images/nowshop.jpg" %}');">
       <div class="container">
         <div class="row no-gutters slider-text align-items-center justify-content-center">
@@ -64,20 +121,26 @@
 				</div>
     		</div>
     		<div class="row">
-				{%  for product in products %}
+				{%  for item in products %}
     			<div class="col-md-6 col-lg-3 ftco-animate">
     				<div class="product">
 						
-    					<a href="{% url 'single_product' product.id %}" class="img-prod">
-							<img class="img-fluid" src="{{ product.image1.url }}" alt="{{ product.product_name }}">
+    					<a href="{% url 'single_product' item.product.id %}" class="img-prod">
+							<img class="img-fluid" src="{{ item.product.image1.url }}" alt="{{ item.product.product_name }}">
 						</a>
 						
     					<div class="text py-3 pb-4 px-3 text-center">
-    						<h3><a href="">{{product.product_name}}</a></h3>
+    						<h3><a href="{% url 'single_product' item.product.id %}">{{item.product.product_name}}</a></h3>
     						<div class="d-flex">
     							<div class="pricing">
-		    						<p class="price"><span class="mr-2 price-dc"></span><span class="price-sale">₹{{product.price}}</span></p>
-		    					</div>
+									{% if item.best_offer %}
+										<p><del>${{ item.product.price }}</del></p>
+										<p>{{ item.discount_percentage }}% off</p>
+										<p>Offer Price: Rs.{{ item.final_price }}</p>
+									{% else %}
+										<p>Price: Rs.{{ item.product.price }}</p>
+									{% endif %}
+								</div>
 	    					</div>
     					</div>
     				</div>

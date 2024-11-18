@@ -1,0 +1,59 @@
+{% extends 'user/base.html' %}
+{% load static %}
+{% block title %}Retry Payment{% endblock %}
+
+{% block content %}
+<section class="ftco-section bg-light">
+    <div class="container">
+        <h3>Order #{{ order.order_number }} - Retry Payment</h3>
+        <p>Total Amount: ₹{{ order.total_price }}</p>
+
+        <h4>Products in Your Order:</h4>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Product Image</th>
+                    <th>Product Name</th>
+                    <th>Price</th>
+                    <th>Quantity</th>
+                    <th>Subtotal</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in order.items.all %}
+                <tr>
+                    <td>
+                        <img src="{{ item.product.image1.url }}" alt="{{ item.product.product_name }}" style="width: 50px; height: auto;">
+                    </td>
+                    <td>{{ item.product.product_name }}</td>
+                    <td>₹{{ item.price }}</td>
+                    <td>{{ item.quantity }}</td>
+                    <td>₹{{ item.subtotal_price }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- Razorpay Payment Button -->
+        <form action="{% url 'handle_payment' %}" method="POST">
+            {% csrf_token %}
+            <script src="https://checkout.razorpay.com/v1/checkout.js"
+                data-key="{{ razorpay_key }}"
+                data-amount="{{ amount }}"
+                data-currency="INR"
+                data-order_id="{{ razorpay_order_id }}"
+                data-buttontext="Pay Now"
+                data-name="meatsouk"
+                data-description="Order Payment"
+                data-image="{% static 'images/logo.png' %}"
+                data-prefill.name="{{ order.user.first_name }} {{ order.user.last_name }}"
+                data-prefill.email="{{ order.user.email }}"
+                data-theme.color="#ff8800">
+            </script>
+            <input type="hidden" name="order_id" value="{{ order.id }}"> <!-- Include the order ID -->
+            <input type="hidden" value="Hidden Element" name="hidden">
+        </form>
+        
+    </div>
+</section>
+{% endblock %}
