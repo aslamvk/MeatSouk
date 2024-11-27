@@ -299,7 +299,7 @@ def place_order(request):
             user_coupon.save()
 
         # Clear coupon data from the session after order placement
-        request.session.pop('coupon_code', None)
+        request.session.pop('coupon_code', None) 
         request.session.pop('discount_value', None)
 
         return render(request, 'user/order_success.html')
