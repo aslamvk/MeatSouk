@@ -10,7 +10,7 @@ from django.views.decorators.cache import never_cache
 @login_required(login_url='admin_login')
 @never_cache
 def admin_category(request):
-    # Fetch all categories from the database
+    
     categories = Category.objects.all()
     context = {
         'categories': categories
@@ -24,19 +24,17 @@ def add_admin_category(request):
         category_name = request.POST.get('category_name')
         category_image = request.FILES.get('category_image')
         category_unit = request.POST.get('category_unit')
-        is_listed = request.POST.get('is_listed') == 'on'  # Convert checkbox to boolean
+        is_listed = request.POST.get('is_listed') == 'on' 
 
-        # Validate category name: Check if it already exists
+
         if Category.objects.filter(category_name=category_name).exists():
             messages.error(request, "Category already exists.")
             return redirect('add_admin_category')
 
-        # Validate that the category name contains only alphabetic characters
         if not category_name.isalpha():
             messages.error(request, "Category name must be alphabetic.")
             return redirect('add_admin_category')
 
-        # Create new category
         new_category = Category(
             category_name=category_name,
             category_image=category_image,
@@ -47,7 +45,7 @@ def add_admin_category(request):
         messages.success(request, "Category added successfully.")
         return redirect('admin_category')
 
-    # If it's a GET request, render the add category form
+    
     return render(request, 'admin_category_add.html')
 
 @login_required(login_url='admin_login')
@@ -58,25 +56,25 @@ def edit_admin_category(request, category_id):
     if request.method == 'POST':
         category_name = request.POST.get('category_name')
         category_unit = request.POST.get('category_unit')
-        category_image = request.FILES.get('category_image')  # Handle file upload
+        category_image = request.FILES.get('category_image')  
         
-        # Validate the inputs (you can customize the validation rules)
+        
         if not category_name or not category_unit:
             messages.error(request, "Category name and unit are required.")
         else:
-            # Update the category fields
+            
             category.category_name = category_name
             category.category_unit = category_unit
             
             if category_image:
-                # Optional: Delete the old image if a new one is uploaded
+                
                 if category.category_image:
                     default_storage.delete(category.category_image.path)
                 
-                # Save the new image
+                
                 category.category_image = category_image
 
-            # Save the updated category object
+            
             category.save()
             
             messages.success(request, 'Category updated successfully.')

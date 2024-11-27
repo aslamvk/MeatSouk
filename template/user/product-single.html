@@ -122,11 +122,20 @@
 
                     <div class="w-100"></div>
                     <div class="col-md-12">
-                    {% if product.stock <= 0 %}
-                        <p style="color: red;">Out of Stock</p>
-                    {% else %}
-                        <p style="color: #000;">{{ product.stock }}{{ product.category.category_unit }} available</p>
-                    {% endif %}                    </div>
+                        {% if product.stock <= 0 %}
+                            <p style="color: red;">Out of Stock</p>
+                        {% else %}
+                            <p style="color: #000;">
+                                {% if product.product_unit == 'kg' %}
+                                    {{ product.stock }} kg available
+                                {% elif product.product_unit == 'piece' %}
+                                    {{ product.stock }} pieces available
+                                {% else %}
+                                    {{ product.stock }} units available
+                                {% endif %}
+                            </p>
+                        {% endif %}
+                    </div>
                 </div>
                 <p>
                     {% if product.stock <= 0 %}
@@ -173,43 +182,86 @@
 </section>
 
 <script>
-    document.getElementById('addToCartBtn').addEventListener('click', function() {
-        const productId = {{ product.id }};
-        const quantity = 0.5;
-        console.log(productId);
-        
-        fetch("{% url 'add_to_cart' %}", {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'X-CSRFToken': '{{ csrf_token }}'
-            },
-            body: `product_id=${productId}&quantity=${quantity}`
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                Swal.fire({
-                            icon: 'success',
-                            title: 'Success',
-                            text: data.message,
-                            showConfirmButton: true,  // Show the 'OK' button
-                            confirmButtonText: 'OK',  // Text for the 'OK' button
-                        }).then((result) => {
-                            if (result.isConfirmed) {
-                                window.location.reload(); // Reload the page when 'OK' is clicked
-                            }
+    document.addEventListener('DOMContentLoaded', function() {
+        const addToCartBtn = document.getElementById('addToCartBtn');
+        if (addToCartBtn) {
+            addToCartBtn.addEventListener('click', async function(e) {
+                e.preventDefault();
+                
+                const productId = {{ product.id }};
+                // Set initial quantity based on product unit
+                let quantity;
+                {% if product.product_unit == 'kg' %}
+                    quantity = 0.5;
+                {% else %}
+                    quantity = 1;
+                {% endif %}
+                
+                try {
+                    const response = await axios({
+                        method: 'post',
+                        url: "{% url 'add_to_cart' %}",
+                        data: {
+                            product_id: productId,
+                            quantity: quantity
+                        },
+                        headers: {
+                            'X-CSRFToken': '{{ csrf_token }}',
+                            'Content-Type': 'application/json'
+                        }
+                    });
+    
+                    if (response.data.success) {
+                        if (response.data.already_in_cart) {
+                            // Show "already in cart" message
+                            Swal.fire({
+                                icon: 'info',
+                                title: 'Already in Cart',
+                                text: response.data.message,
+                                showCancelButton: true,
+                                confirmButtonText: 'Go to Cart',
+                                cancelButtonText: 'Continue Shopping'
+                            }).then((result) => {
+                                if (result.isConfirmed) {
+                                    window.location.href = "{% url 'cart' %}";
+                                }
+                            });
+                        } else {
+                            // Show success message
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Added to Cart',
+                                text: response.data.message,
+                                showCancelButton: true,
+                                confirmButtonText: 'Go to Cart',
+                                cancelButtonText: 'Continue Shopping'
+                            }).then((result) => {
+                                if (result.isConfirmed) {
+                                    window.location.href = "{% url 'cart' %}";
+                                }
+                            });
+                        }
+                    } else {
+                        // Show error message
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: response.data.message
                         });
-            } else {
-                Swal.fire({
-        icon: 'error',
-        title: 'Error',
-        text: data.message,
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Something went wrong while adding the item to cart.'
+                    });
+                }
+            });
+        }
     });
-            }
-        })
-        .catch(error => console.error('Error:', error));
-    });
-    </script>
+</script>
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 {% endblock %}

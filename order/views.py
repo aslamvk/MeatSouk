@@ -7,7 +7,6 @@ from decimal import Decimal
 from order.models import Order, OrderItem
 from django.shortcuts import get_object_or_404
 from pincode.models import Pincode
-from django.db import transaction
 from django.conf import settings
 import razorpay # type: ignore
 from django.template.loader import render_to_string
@@ -22,10 +21,24 @@ import json
 from coupon.models import UserCoupon
 from wallet.models import WalletTransaction
 from offer.models import Product_Offers, Category_Offers
-from django.db.models import Sum, F, Q, Count
+from django.db.models import Sum, F, Q, Count, Value, DecimalField, IntegerField
 from datetime import datetime, date, timedelta
 from django.contrib import messages
-from django.db.models.functions import TruncDate
+from django.db.models.functions import TruncDate, Coalesce
+from django.db.models import Value
+from reportlab.lib.pagesizes import letter # type: ignore
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle # type: ignore
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle # type: ignore
+from reportlab.lib import colors # type: ignore
+from reportlab.lib.units import inch # type: ignore
+import io
+from openpyxl import Workbook # type: ignore
+from openpyxl.styles import Font, PatternFill # type: ignore
+from xhtml2pdf import pisa # type: ignore
+import random
+from io import BytesIO
+from order.models import Invoice
+
 
 # Create your views here.
 
@@ -46,6 +59,7 @@ def place_order(request):
     subtotal_price = Decimal('0.00')
     cart_items_with_subtotals = []
 
+    total_offer_discount = Decimal('0.00')
     for item in cart_items:
         quantity = Decimal(item.quantity)
         product = item.products
@@ -62,6 +76,8 @@ def place_order(request):
         category_discount = Decimal(category_offer.offer_discount if category_offer else '0.00')
         best_offer_discount = max(product_discount, category_discount)
         
+        if best_offer_discount:
+            total_offer_discount = (best_offer_discount * quantity)
         offer_price = Decimal('0.00')
         if best_offer_discount:
             offer_price = actual_price - best_offer_discount
@@ -77,10 +93,26 @@ def place_order(request):
             'item_subtotal': item_subtotal
         })
 
-    # Delivery charge logic
+    
     delivery_charge = Decimal('0.00') if subtotal_price > Decimal('500.00') else Decimal('40.00')
 
     total_price = subtotal_price - discount_value + delivery_charge
+
+    available_coupons = []
+    active_coupons = Coupon.objects.filter(active=True)
+    
+    for coupon in active_coupons:
+        # Check if user has already used this coupon
+        user_coupon_exists = UserCoupon.objects.filter(
+            user=user, 
+            coupon=coupon,
+            used=True
+        ).exists()
+        
+        if (not user_coupon_exists and 
+            coupon.minimum_purchase_amount <= subtotal_price and 
+            coupon.valid_from <= now.date() <= coupon.valid_upto):
+            available_coupons.append(coupon)
 
 
     if request.method == 'POST':
@@ -144,7 +176,9 @@ def place_order(request):
                 payment_type=payment_type,
                 payment_status=payment_status,
                 total_price=total_price,
-                coupon_code=coupon_code
+                coupon_code=coupon_code,
+                coupon_discount=discount_value,
+                offer_discount=total_offer_discount
             )
 
             item_discount = Decimal('0.00')
@@ -222,7 +256,8 @@ def place_order(request):
             total_price=total_price,
             payment_type=payment_type,
             coupon_code=coupon_code,
-            discount_amount=discount_value  # Save the discount amount
+            coupon_discount=discount_value,
+            offer_discount=total_offer_discount
         )
 
         item_discount = Decimal('0.00')
@@ -249,7 +284,7 @@ def place_order(request):
                 product=item.products,
                 quantity=quantity,
                 price=item_price,
-                subtotal_price=item_subtotal_price  # Store item subtotal after applying discount
+                subtotal_price=item_subtotal_price
             )
 
             if payment_status == 'Success':
@@ -276,7 +311,7 @@ def place_order(request):
         'subtotal_price': subtotal_price,
         'delivery_charge': delivery_charge,
         'total_price': total_price,
-        'coupon': coupon
+        'coupon': available_coupons
     })
 
 @login_required(login_url='login')
@@ -364,7 +399,7 @@ def user_singleitem_cancel(request,order_item_id):
     return redirect('user_single_order_items', order_id = order_item.order.id)
 
 def admin_order_list(request):
-    orders = Order.objects.all().order_by('created_at')
+    orders = Order.objects.all().order_by('-created_at')
     return render(request, 'admin_order_list.html',{'orders':orders})
 
 def admin_single_order_details(request, id):
@@ -381,7 +416,6 @@ def update_order_status(request, id):
     order = get_object_or_404(Order, id=id)
     
     if request.method == 'POST':
-        # Iterate through each order item to update status
         for item in order.items.all():
             new_status = request.POST.get(f'status_{item.id}')
             old_status = item.status
@@ -415,6 +449,8 @@ def razorpay_payment(request):
         cart_items_with_subtotals = []
         now = timezone.now()
 
+        total_offer_discount = Decimal('0.00')
+
         for item in cart_items:
             quantity = Decimal(item.quantity)
             product = item.products
@@ -430,6 +466,9 @@ def razorpay_payment(request):
             product_discount = Decimal(product_offer.offer_discount if product_offer else '0.00')
             category_discount = Decimal(category_offer.offer_discount if category_offer else '0.00')
             best_offer_discount = max(product_discount, category_discount)
+
+            if best_offer_discount:
+                total_offer_discount = (best_offer_discount * quantity)
 
             offer_price = actual_price - best_offer_discount if best_offer_discount else actual_price
             item_subtotal = offer_price * quantity
@@ -479,7 +518,6 @@ def razorpay_payment(request):
             })
             payment_status = 'Success'
         except razorpay.errors.SignatureVerificationError:
-            # if the razorpay payment verification failed, it leave the razorpay payment status as failure.
             pass
         new_order = Order.objects.create(
             user=user,
@@ -488,7 +526,8 @@ def razorpay_payment(request):
             total_price = total_price,
             payment_status=payment_status,
             coupon_code=coupon_code,
-            discount_amount=discount_value
+            coupon_discount=discount_value,
+            offer_discount=total_offer_discount
         )
 
         item_discount = Decimal('0.00')
@@ -649,19 +688,16 @@ def process_refund(order_item):
     wallet.balance += refund_amount
     wallet.save()
 
-@csrf_exempt  # Use this decorator to exempt this view from CSRF verification
+@csrf_exempt
 def apply_coupon(request):
     if request.method == "POST":
         try:
-            # Parse the JSON body
             data = json.loads(request.body)
             coupon_code = data.get("coupon_code")
             cart_total = Decimal(data.get("cart_total", "0.00"))
             print("Received coupon code:", coupon_code)
 
-            # Attempt to get the coupon
             coupon = Coupon.objects.get(code=coupon_code, active=True)
-            print("Coupon found:", coupon)
 
             now = timezone.now().date()
 
@@ -674,9 +710,7 @@ def apply_coupon(request):
             if coupon.coupon_limit <= 0:
                 return JsonResponse({"error": "This coupon has reached its usage limit."})
 
-            # Check if the coupon is valid
             if coupon.valid_from <= now <= coupon.valid_upto and cart_total >= Decimal(coupon.minimum_purchase_amount):
-                               # Store the coupon details in the session
                 request.session['coupon_code'] = coupon.code
                 request.session['discount_value'] = str(coupon.discount_value) 
                 
@@ -685,7 +719,6 @@ def apply_coupon(request):
 
                 return JsonResponse({"success": True, "discount_value": coupon.discount_value})
             else:
-                # Remove coupon details from the session if coupon is invalid
                 request.session.pop('coupon_code', None)
                 request.session.pop('discount_value', None)
                 print("Coupon is not valid for the current date.")
@@ -701,7 +734,6 @@ def apply_coupon(request):
 @csrf_exempt
 def remove_coupon(request):
     if request.method == "POST":
-        # Remove coupon details from the session
         request.session.pop('coupon_code', None)
         request.session.pop('discount_value', None)
         return JsonResponse({"success": True})
@@ -740,12 +772,118 @@ def sales_report(request):
             enddate = datetime.strptime(enddate, '%Y-%m-%d').date()
         except ValueError:
             enddate = None
+    today = date.today()
+
+    sales_report = (
+        Order.objects.annotate(
+            date=TruncDate('created_at'),
+            total_discount=Coalesce(F('coupon_discount'), Value(0, output_field=DecimalField())) + 
+                        Coalesce(F('offer_discount'), Value(0, output_field=DecimalField())),
+            valid_sales_price=Coalesce(F('total_price'), Value(0, output_field=DecimalField())) - 
+                            Coalesce(F('coupon_discount'), Value(0, output_field=DecimalField())) - 
+                            Coalesce(F('offer_discount'), Value(0, output_field=DecimalField()))
+        )
+        .values('date')
+        .annotate(
+            total_sales_revenue=Sum('valid_sales_price', filter=~Q(items__status__in=['Cancelled', 'Approve Return']),output_field=DecimalField()),
+            net_sales=Sum('total_price', output_field=DecimalField()),
+            coupon_discount=F('coupon_discount'),
+            offer_discount=F('offer_discount'),
+            total_discount=Sum('total_discount', output_field=DecimalField()),
+            total_units_sold=Sum(
+                'items__quantity', 
+                filter=~Q(items__status__in=['Cancelled', 'Approve Return']),
+                output_field=DecimalField()
+            )
+        )
+        .order_by('date')
+    )
+
+    if startdate and enddate:
+        sales_report = sales_report.filter(date__range=[startdate, enddate])
+    elif startdate:
+        sales_report = sales_report.filter(date__gte=startdate)
+    elif enddate:
+        sales_report = sales_report.filter(date__lte=enddate)
+
+
+    if sort_option == 'day':
+        sales_report = sales_report.filter(date=today)
+    elif sort_option == 'week':
+        start_of_week = today - timedelta(days=today.weekday())
+        sales_report = sales_report.filter(date__gte=start_of_week)
+    elif sort_option == 'month':
+        sales_report = sales_report.filter(date__month=today.month)
+    elif sort_option == 'year':
+        sales_report = sales_report.filter(date__year=today.year)
+
+    discount_totals = Order.objects.aggregate(
+        total_coupon_discount=Coalesce(Sum('coupon_discount'), Value(0, output_field=DecimalField())),
+        total_offer_discount=Coalesce(Sum('offer_discount'), Value(0, output_field=DecimalField())),
+        total_discount_all=Coalesce(
+            Sum(F('coupon_discount') + F('offer_discount')), 
+            Value(0, output_field=DecimalField())
+        )
+    )
+
+    total_sales_price = Order.objects.annotate(
+        valid_sales_price=Coalesce(F('total_price'), Value(0, output_field=DecimalField())) - 
+        Coalesce(F('coupon_discount'), Value(0, output_field=DecimalField())) - 
+        Coalesce(F('offer_discount'), Value(0, output_field=DecimalField()))
+    ).filter(
+        ~Q(items__status__in=['Cancelled', 'Approve Return'])
+    ).aggregate(
+        total=Coalesce(Sum('valid_sales_price'), Value(0, output_field=DecimalField()))
+    )['total']
+    total_order_count = Order.objects.count()
+    total_units_sold = OrderItem.objects.exclude(
+        status__in=['Cancelled', 'Approve Return']
+    ).aggregate(
+        total=Coalesce(Sum('quantity'), Value(0, output_field=DecimalField()))
+    )['total']
+    total_order_amount = Order.objects.aggregate(
+        total=Coalesce(Sum('total_price'), Value(0, output_field=DecimalField()))
+    )['total']
+
+
+    context = {
+        'sales_report': sales_report,
+        'total_revenue': total_sales_price,
+        'total_units_sold': total_units_sold,
+        'total_orders_count': total_order_count,
+        'total_order_amount': total_order_amount,
+        'total_discount_all': discount_totals['total_discount_all'] or 0,
+        'total_coupon_discount': discount_totals['total_coupon_discount'] or 0,
+        'total_offer_discount': discount_totals['total_offer_discount'] or 0,
+        'startdate': startdate,
+        'enddate': enddate,
+        'sortOption': sort_option,
+    }
+
+    return render(request, 'sales_report.html', context)
+
+def download_sales_report_pdf(request):
+    startdate = request.GET.get('startdate')
+    enddate = request.GET.get('enddate')
+    sort_option = request.GET.get('sortOption')
+
+    if startdate:
+        try:
+            startdate = datetime.strptime(startdate, '%Y-%m-%d').date()
+        except ValueError:
+            startdate = None
+    if enddate:
+        try:
+            enddate = datetime.strptime(enddate, '%Y-%m-%d').date()
+        except ValueError:
+            enddate = None
+
     sales_report = Order.objects.annotate(date=TruncDate('created_at')).values('date').annotate(
-        total_sales_revenue=Sum(F('total_price') - F('discount_amount'),
-            filter=~Q(items__status='Cancelled')
+        total_sales_revenue=Sum(F('total_price') - F('coupon_discount'),
+            filter=~Q(items__status='Cancelled'),default=0
         ),
-        net_sales=Sum('total_price'),
-        total_discount=Sum('discount_amount'),
+        net_sales=Sum('total_price', default=0),
+        coupon_discount=Sum('coupon_discount', default=0),
         total_units_sold=Sum('items__quantity', default=0, filter=~Q(items__status='Cancelled'))
     ).order_by('date')
 
@@ -763,30 +901,233 @@ def sales_report(request):
     elif sort_option == 'week':
         start_of_week = today - timedelta(days=today.weekday())
         sales_report = sales_report.filter(date__gte=start_of_week)
-        print(f'{sales_report}')
     elif sort_option == 'month':
         sales_report = sales_report.filter(date__month=today.month)
     elif sort_option == 'year':
         sales_report = sales_report.filter(date__year=today.year)
 
-    total_sales_price =  OrderItem.objects.exclude(status__in=['Cancelled', 'Approve Return']).aggregate(Sum('price'))['price__sum'] or 0
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter)
+    elements = []
+
+    styles = getSampleStyleSheet()
+    header_style = ParagraphStyle(
+        'Header', fontSize=10, textColor=colors.black, spaceAfter=6, alignment=1
+    )
+    title_style = ParagraphStyle('Title', fontSize=14, spaceAfter=12, alignment=1)
+
+    company_info = Paragraph(
+        "<b>MeatSouk Fresh Market PVT</b><br/>"
+        "Email: meatsouk@gmail.com<br/>"
+        "Website: www.meatsouk.com", header_style
+    )
+    elements.append(company_info)
+    elements.append(Spacer(1, 12))
+
+    title = f"Sales Report ({startdate or 'All Time'} - {enddate or 'Present'}) - Sorted by {sort_option.capitalize() if sort_option else 'Date'}"
+    elements.append(Paragraph(title, title_style))
+    elements.append(Spacer(1, 12))
+
+    total_sales_price = OrderItem.objects.exclude(status__in=['Cancelled', 'Approve Return']).aggregate(Sum('price'))['price__sum'] or 0
     total_order_count = Order.objects.count()
     total_units_sold = OrderItem.objects.exclude(status__in=['Cancelled', 'Approve Return']).count()
     total_order_amount = Order.objects.aggregate(Sum('total_price'))['total_price__sum'] or 0
-    total_discount_all = Order.objects.annotate(
-        total_discount=F('discount_amount')
-    ).aggregate(total_discount_all=Sum('total_discount'))['total_discount_all'] or 0
+    total_discount_all = Order.objects.aggregate(coupon_discount=Sum('coupon_discount'))['coupon_discount'] or 0
+
+    summary_data = [
+        ["Total Revenue", f"{total_sales_price:.2f}"],
+        ["Total Orders", total_order_count],
+        ["Total Units Sold", total_units_sold],
+        ["Total Order Amount", f"{total_order_amount:.2f}"],
+        ["Total Discount", f"{total_discount_all:.2f}"]
+    ]
+    summary_table = Table(summary_data, colWidths=[2.5*inch, 2*inch])
+    summary_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.lightgrey),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black)
+    ]))
+    elements.append(summary_table)
+    elements.append(Spacer(1, 24))
+
+    table_data = [
+        ["Date", "Total Sales Revenue", "Total Discount", "Net Sales", "Total Units Sold"]
+    ]
+
+    for record in sales_report:
+        table_data.append([
+            record['date'].strftime('%Y-%m-%d') if record.get('date') else 'N/A',
+            f"{record.get('total_sales_revenue', 0):.2f}",
+            f"{record.get('coupon_discount', 0):.2f}",
+            f"{record.get('net_sales', 0):.2f}",
+            record.get('total_units_sold', 0)
+        ])
+
+    table = Table(table_data, colWidths=[1.5*inch] + [1.5*inch]*4)
+    table_style = TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 8),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.white),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+    ])
+
+    table.setStyle(table_style)
+    elements.append(table)
+
+    doc.build(elements)
+    buffer.seek(0)
+
+    response = HttpResponse(buffer, content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="MeatSouk_Sales_Report_{datetime.now().strftime("%Y%m%d")}.pdf"'
+    return response
+
+def download_sales_report_excel(request):
+    startdate = request.GET.get('startdate')
+    enddate = request.GET.get('enddate')
+    sort_option = request.GET.get('sortOption')
+
+    if startdate:
+        try:
+            startdate = datetime.strptime(startdate, '%Y-%m-%d').date()
+        except ValueError:
+            startdate = None
+    if enddate:
+        try:
+            enddate = datetime.strptime(enddate, '%Y-%m-%d').date()
+        except ValueError:
+            enddate = None
+
+    sales_report = Order.objects.annotate(date=TruncDate('created_at')).values('date').annotate(
+        total_sales_revenue=Sum(F('total_price') - F('coupon_discount'),
+            filter=~Q(items__status='Cancelled')
+        ),
+        net_sales=Sum('total_price'),
+        coupon_discount=Sum('coupon_discount'),
+        total_units_sold=Sum('items__quantity', default=0, filter=~Q(items__status='Cancelled'))
+    ).order_by('date')
+
+    if startdate and enddate:
+        sales_report = sales_report.filter(date__range=[startdate, enddate])
+    elif startdate:
+        sales_report = sales_report.filter(date__gte=startdate)
+    elif enddate:
+        sales_report = sales_report.filter(date__lte=enddate)
+
+    today = date.today()
+
+    if sort_option == 'day':
+        sales_report = sales_report.filter(date=today)
+    elif sort_option == 'week':
+        start_of_week = today - timedelta(days=today.weekday())
+        sales_report = sales_report.filter(date__gte=start_of_week)
+    elif sort_option == 'month':
+        sales_report = sales_report.filter(date__month=today.month)
+    elif sort_option == 'year':
+        sales_report = sales_report.filter(date__year=today.year)
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Sales Report"
+
+    total_sales_price = OrderItem.objects.exclude(status__in=['Cancelled', 'Approve Return']).aggregate(Sum('price'))['price__sum'] or 0
+    total_order_count = Order.objects.count()
+    total_units_sold = OrderItem.objects.exclude(status__in=['Cancelled', 'Approve Return']).count()
+    total_order_amount = Order.objects.aggregate(Sum('total_price'))['total_price__sum'] or 0
+    total_discount_all = Order.objects.aggregate(coupon_discount=Sum('coupon_discount'))['coupon_discount'] or 0
+
+    ws['A1'] = "Sales Report Summary"
+    ws['A1'].font = Font(bold=True, size=14)
+    summary_data = [
+        ("Total Revenue", f"{total_sales_price:.2f}"),
+        ("Total Orders", total_order_count),
+        ("Total Units Sold", total_units_sold),
+        ("Total Order Amount", f"{total_order_amount:.2f}"),
+        ("Total Discount", f"{total_discount_all:.2f}")
+    ]
+
+    for row_num, (label, value) in enumerate(summary_data, start=3):
+        ws[f'A{row_num}'] = label
+        ws[f'B{row_num}'] = value
+        ws[f'A{row_num}'].font = Font(bold=True)
+    
+    headers = ["Date", "Total Sales Revenue", "Total Discount", "Net Sales", "Total Units Sold"]
+    ws.append(headers)
+    for cell in ws[8]:
+        cell.font = Font(bold=True)
+        cell.fill = PatternFill(start_color="DDDDDD", end_color="DDDDDD", fill_type="solid")
+
+    for record in sales_report:
+        ws.append([
+            record['date'].strftime('%Y-%m-%d') if record.get('date') else 'N/A',
+            record.get('total_sales_revenue', 0),
+            record.get('coupon_discount', 0),
+            record.get('net_sales', 0),
+            record.get('total_units_sold', 0)
+        ])
+
+    for column in ws.columns:
+        max_length = 0
+        column_letter = column[0].column_letter
+        for cell in column:
+            try:
+                if len(str(cell.value)) > max_length:
+                    max_length = len(cell.value)
+            except:
+                pass
+        adjusted_width = (max_length + 2)
+        ws.column_dimensions[column_letter].width = adjusted_width
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = f'attachment; filename="MeatSouk_Sales_Report_{datetime.now().strftime("%Y%m%d")}.xlsx"'
+    wb.save(response)
+    return response
+
+def generate_invoice_number():
+    """Generate a unique invoice number with pattern 'meat123123XXX'."""
+    unique_id = random.randint(100000, 999999)
+    return f"meat{unique_id}"
+def render_to_pdf(template_src, context_dict):
+    template = render_to_string(template_src, context_dict)
+    result = BytesIO()
+    pdf = pisa.CreatePDF(template, dest=result)
+    if not pdf.err:
+        return result.getvalue()
+    return None
+def download_invoice_item(request, item_id):
+    order_item = get_object_or_404(OrderItem, id=item_id, order__user=request.user)
+    order = order_item.order
+
+    if order_item.status != "Delivered":
+        return HttpResponse("Invoice can only be downloaded for delivered items", status=400)
+
+    invoice, created = Invoice.objects.get_or_create(
+        order_item=order_item,
+        defaults={
+            'invoice_number': generate_invoice_number(),
+            'invoice_date': timezone.now()
+        }
+    )
+
+    if not created:
+        invoice.invoice_date = timezone.now()
+        invoice.save()
 
     context = {
-        'sales_report': sales_report,
-        'total_revenue': total_sales_price,
-        'total_units_sold': total_units_sold,
-        'total_orders_count': total_order_count,
-        'total_order_amount': total_order_amount,
-        'total_discount_all': total_discount_all,
-        'startdate': startdate,
-        'enddate': enddate,
-        'sortOption': sort_option,
+        'order_item': order_item,
+        'invoice_number': invoice.invoice_number,
+        'invoice_date': invoice.invoice_date,
+        'order': order,
     }
 
-    return render(request, 'sales_report.html', context)
+    pdf = render_to_pdf('user/order_invoice.html', context)
+    
+    if pdf:
+        response = HttpResponse(pdf, content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="invoice_{order_item.id}.pdf"'
+        return response
+    
+    return HttpResponse("PDF generation failed", status=500)

@@ -19,4 +19,7 @@ urlpatterns = [
     path('remove_coupon/', views.remove_coupon, name='remove_coupon'),
     path('return-order-request/<int:order_item_id>', views.user_return_order_item, name='user_return_order_item'),
     path('sales_report/', views.sales_report, name='sales_report'),
+    path('download_sales_report_pdf/', views.download_sales_report_pdf, name='download_sales_report_pdf'),
+    path('download_sales_report_excel/', views.download_sales_report_excel, name='download_sales_report_excel'),
+    path('download-invoice/<int:item_id>/', views.download_invoice_item, name='download_invoice_item'),
 ]

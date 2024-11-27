@@ -90,8 +90,29 @@
                     </div>
 
                     <div class="form-group">
-                        <input type="number" name="price" placeholder="Price" min="0" required>
-                        <input type="number" name="stock" placeholder="Stock" min="0" required>
+                        <select name="product_unit" id="product_unit" required onchange="updateStockField()">
+                            <option value="">Select Unit</option>
+                            {% for value, label in unit_choices %}
+                                <option value="{{ value }}">{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <input type="number" 
+                               name="price" 
+                               placeholder="Price" 
+                               min="0.01" 
+                               step="0.01" 
+                               required>
+                        
+                        <input type="number" 
+                               id="stock_input"
+                               name="stock" 
+                               placeholder="Stock" 
+                               min="0.01" 
+                               step="0.01" 
+                               required>
                     </div>
 
                     <div class="form-group">
@@ -226,5 +247,45 @@
             }
         }
     </script>
+    <script>
+        function updateStockField() {
+            const unitSelect = document.getElementById('product_unit');
+            const stockInput = document.getElementById('stock_input');
+            
+            if (unitSelect.value === 'piece') {
+                stockInput.step = "1";
+                stockInput.min = "1";
+                stockInput.placeholder = "Stock (in pieces)";
+            } else if (unitSelect.value === 'kg') {
+                stockInput.step = "0.01";
+                stockInput.min = "0.01";
+                stockInput.placeholder = "Stock (in kg)";
+            }
+        }
+        
+        function validateForm() {
+            const unitSelect = document.getElementById('product_unit');
+            const stockInput = document.getElementById('stock_input');
+            const stockValue = parseFloat(stockInput.value);
+        
+            if (unitSelect.value === 'piece' && !Number.isInteger(stockValue)) {
+                alert('Stock must be a whole number for piece units');
+                return false;
+            }
+        
+            if (unitSelect.value === 'kg' && stockValue < 0.01) {
+                alert('Minimum stock for kg products should be 0.01 kg');
+                return false;
+            }
+        
+            return true;
+        }
+        
+        // Initialize stock field on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            updateStockField();
+        });
+        </script>
+    
 </body>
 </html>

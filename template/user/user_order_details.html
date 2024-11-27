@@ -22,7 +22,7 @@
               <p>{{order.address.full_name}}</p>
               <p>{{order.address.landmark}},{{order.address.district}},{{order.address.state}} {{order.address.pincode}} {{order.address.country}}</p>
               <p>phone number: {{order.address.phone_number}}</p>
-              <p>payment status: {{order.payment_status}}</p>
+              <p>payment status: {% if order.payment_status == 'Failure' %}Payment pending{% elif order.payment_status == 'Success' %}Payment success{% else %}Payment pending{% endif %}</p>
               {% if order.payment_status == 'Failure' %}
               <div class="retry_payment">
                 <form action="{% url 'retry_payment' order.id %}" method="GET">
@@ -78,6 +78,9 @@
                   {% endif %}
                 {% endif %}
               </div>
+              {% if order_items.status == "Delivered" %}
+              <a href="{% url 'download_invoice_item' order_items.id %}" class="btn btn-primary mt-3">Download Invoice</a>
+              {% endif %}
 
               <h4 class="mt-4">Order Items</h4>
               <table class="table table-bordered">

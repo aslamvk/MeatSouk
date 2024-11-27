@@ -25,7 +25,8 @@ class Order(models.Model):
     payment_type = models.CharField(max_length=100, choices=PAYMENT_CHOICES)
     payment_status = models.CharField(max_length=100, choices=PAYMENT_STATUS,default='Pending')
     estimated_delivery = models.TimeField(blank=True, null=True)
-    discount_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    offer_discount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    coupon_discount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     coupon_code = models.CharField(max_length=50, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -58,3 +59,11 @@ class OrderItem(models.Model):
     status = models.CharField(max_length=100, choices=STATUS, default='Order Pending')
     subtotal_price = models.DecimalField(max_digits=100, decimal_places=2, default=0.00)
     return_reason = models.TextField(blank=True, null=True)
+
+class Invoice(models.Model):
+    order_item = models.OneToOneField(OrderItem, on_delete=models.CASCADE, related_name='invoice')
+    invoice_number = models.CharField(max_length=20, unique=True)
+    invoice_date = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"Invoice {self.invoice_number} for {self.order_item}"

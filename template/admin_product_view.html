@@ -58,7 +58,6 @@
                             <th>Product Name</th>
                             <th>Category</th>
                             <th>Description</th>
-                            <th>Deal</th>
                             <th>Price</th>
                             <th>Stock</th>
                             <th>Action</th>
@@ -72,9 +71,16 @@
                             <td>{{ product.product_name }}</td>
                             <td>{{ product.category.category_name }}</td>
                             <td>{{ product.product_description }}</td>
-                            <td>{% if product.deals %}{{ product.deals }}% Off{% else %}No Deal{% endif %}</td>
                             <td>₹{{ product.price }}</td>
-                            <td>{{ product.stock }} Kg</td>
+                            <td>
+                                {% if product.product_unit == 'kg' %}
+                                    {{ product.stock }} kg
+                                {% elif product.product_unit == 'piece' %}
+                                    {{ product.stock }} piece
+                                {% else %}
+                                    {{ product.stock }}
+                                {% endif %}
+                            </td>
                             <td>
                                 <div class="action-buttons">
                                     <form method="POST" action="{% if product.is_listed %}{% url 'unlist_product' product.id %}{% else %}{% url 'list_product' product.id %}{% endif %}">

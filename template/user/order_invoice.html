@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Invoice #{{ invoice_number }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .invoice-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .invoice-details {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .invoice-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .invoice-table th, .invoice-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+    <div class="invoice-header">
+        <h1>Invoice</h1>
+        <p>Invoice Number: {{ invoice_number }}</p>
+        <p>Invoice Date: {{ invoice_date|date:"d M Y" }}</p>
+    </div>
+
+    <div class="invoice-details">
+        <div>
+            <h3>Billing Details</h3>
+            <p>{{ order.address.full_name }}</p>
+            <p>{{ order.address.landmark }}, {{ order.address.district }}</p>
+            <p>{{ order.address.state }} {{ order.address.pincode }}</p>
+            <p>{{ order.address.country }}</p>
+        </div>
+        <div>
+            <h3>Order Details</h3>
+            <p>Order Number: {{ order.order_number }}</p>
+            <p>Order Date: {{ order.created_at|date:"d M Y" }}</p>
+        </div>
+    </div>
+
+    <table class="invoice-table">
+        <thead>
+            <tr>
+                <th>Product</th>
+                <th>Quantity</th>
+                <th>Price per Unit</th>
+                <th>Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>{{ order_item.product.product_name }}</td>
+                <td>{{ order_item.quantity }} {{ order_item.product.category.category_unit }}</td>
+                <td>{{ order_item.product.price }}</td>
+                <td>{{ order_item.subtotal_price }}</td>
+            </tr>
+        </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="3" style="text-align:right;"><strong>Total Amount:</strong></td>
+                <td>{{ order_item.subtotal_price }}</td>
+            </tr>
+        </tfoot>
+    </table>
+</body>
+</html>

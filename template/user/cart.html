@@ -37,11 +37,17 @@
                                 <td class="price">₹{{ item.products.price }}</td>
                                 <td class="quantity">
 									<div class="quantity-controls">
-										<button class="btn btn-outline-secondary btn-minus" data-product-id="{{ item.products.id }}">-</button>
-										<span class="quantity-value">{{ item.quantity }}</span> kg
-										<button class="btn btn-outline-secondary btn-plus" data-product-id="{{ item.products.id }}">+</button>
+										<button class="btn btn-outline-secondary btn-minus" data-product-id="{{ item.products.id }}" data-unit="{{ item.products.product_unit }}">-</button>
+										<span class="quantity-value">
+											{% if item.products.product_unit == 'piece' %}
+												{{ item.quantity|floatformat:"0" }}
+											{% else %}
+												{{ item.quantity|floatformat:"1" }}
+											{% endif %}
+										</span> {{ item.products.product_unit }}
+										<button class="btn btn-outline-secondary btn-plus" data-product-id="{{ item.products.id }}" data-unit="{{ item.products.product_unit }}">+</button>
 									</div>
-									<span class="stock-available text-muted">Available: {{ item.products.stock }} kg</span>
+									<span class="stock-available text-muted">Available: {{ item.products.stock }} {{ item.products.product_unit }}</span>
 									<span class="error-msg text-danger" style="display: none;">Quantity exceeds available stock</span>
 								</td>
                                 <td class="total">₹{{ item.products.price|floatformat:2 }}</td>
@@ -157,29 +163,34 @@
 		document.querySelectorAll('.btn-plus, .btn-minus').forEach(button => {
 			button.addEventListener('click', function () {
 				const productId = this.getAttribute('data-product-id');
+				const unit = this.getAttribute('data-unit');
 				const quantitySpan = this.closest('.quantity-controls').querySelector('.quantity-value');
 				const stockSpan = this.closest('td').querySelector('.stock-available');
 				const errorSpan = this.closest('td').querySelector('.error-msg');
 				let quantity = parseFloat(quantitySpan.textContent);
-				let stock = parseFloat(stockSpan.textContent.replace('Available: ', '').replace(' kg', ''));
-	
+				let stock = parseFloat(stockSpan.textContent.split(' ')[1]); // Extract number from "Available: X kg/piece"
+				
+				// Determine increment based on unit type
+				const increment = unit === 'kg' ? 0.5 : 1;
+				
 				if (this.classList.contains('btn-plus')) {
 					if (quantity < stock && quantity < 6) {
-						quantity += 0.5;
+						quantity += increment;
 						errorSpan.style.display = 'none';
 					} else {
 						errorSpan.style.display = 'block';
 					}
-				} else if (quantity > 0.5) {
-					quantity -= 0.5;
+				} else if (quantity > increment) { // Use increment as minimum quantity
+					quantity -= increment;
 					errorSpan.style.display = 'none';
 				}
-	
-				quantitySpan.textContent = quantity.toFixed(1);
-	
+		
+				// Format quantity based on unit type
+				quantitySpan.textContent = unit === 'kg' ? quantity.toFixed(1) : quantity.toFixed(0);
+		
 				calculateCartTotals();
 				updateCheckoutButton();
-	
+		
 				// Send AJAX request to update quantity
 				axios.post('/update-quantity/', {
 					product_id: productId,

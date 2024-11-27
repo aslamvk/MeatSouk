@@ -93,9 +93,27 @@
                     <!-- Price and Stock -->
                     <div class="form-group">
                         <label for="product_price">Price</label><br>
-                        <input type="number" name="price" value="{{ product.price }}" placeholder="Price" required>
+                        <input type="number" name="price" value="{{ product.price }}" 
+                            min="0.01" step="0.01" placeholder="Price" required>
                         <label for="stock">Stock</label><br>
-                        <input type="number" name="stock" value="{{ product.stock }}" placeholder="Stock" required>
+                        <input type="number" 
+                                name="stock" 
+                                value="{{ product.stock }}" 
+                                data-original-value="{{ product.stock }}"
+                                {% if product.product_unit == 'kg' %}step="0.01"{% else %}step="1"{% endif %} 
+                                placeholder="Stock" 
+                                required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="product_unit">Unit</label><br>
+                        <select name="product_unit" required>
+                            {% for unit_value, unit_label in unit_choices %}
+                                <option value="{{ unit_value }}" {% if product.product_unit == unit_value %}selected{% endif %}>
+                                    {{ unit_label }}
+                                </option>
+                            {% endfor %}
+                        </select>
                     </div>
 
                     <!-- Product Description -->
@@ -218,21 +236,125 @@
         });
     </script>
     <script>
-        function openPincodeModal() {
-            document.getElementById("pincodeModal").style.display = "block";
-        }
-    
-        function closePincodeModal() {
-            document.getElementById("pincodeModal").style.display = "none";
-        }
-    
-        // Close modal when clicking outside of it
-        window.onclick = function(event) {
-            const modal = document.getElementById("pincodeModal");
-            if (event.target == modal) {
-                modal.style.display = "none";
+        document.addEventListener('DOMContentLoaded', function() {
+            // Function to open pincode modal
+            function openPincodeModal() {
+                document.getElementById("pincodeModal").style.display = "block";
             }
-        }
+        
+            // Function to close pincode modal
+            function closePincodeModal() {
+                document.getElementById("pincodeModal").style.display = "none";
+            }
+        
+            // Get the pincode modal form
+            const pincodeForm = document.querySelector('#pincodeModal form');
+        
+            // Add event listener to prevent default form submission
+            pincodeForm.addEventListener('submit', function(event) {
+                event.preventDefault(); // Stop the form from submitting traditionally
+        
+                // Collect selected pincode IDs
+                const selectedPincodes = Array.from(
+                    document.querySelectorAll('#pincode-options input[name="pincodes"]:checked')
+                ).map(checkbox => checkbox.value);
+        
+                // Prepare data to send
+                const formData = new FormData();
+                formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+                selectedPincodes.forEach(pincode => {
+                    formData.append('pincodes', pincode);
+                });
+        
+                // Send AJAX request
+                fetch('{% url 'admin_product_edit' product.id %}', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        // Close the modal
+                        closePincodeModal();
+                        // Show success message
+                        alert('Pincodes updated successfully');
+                    } else {
+                        // Handle any errors
+                        alert('Error updating pincodes: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred while updating pincodes');
+                });
+            });
+        
+            // Make these functions global if they're used in HTML onclick attributes
+            window.openPincodeModal = openPincodeModal;
+            window.closePincodeModal = closePincodeModal;
+        
+            // Close modal when clicking outside of it
+            window.onclick = function(event) {
+                const modal = document.getElementById("pincodeModal");
+                if (event.target == modal) {
+                    modal.style.display = "none";
+                }
+            }
+        });
+    </script>
+    <script>
+        document.querySelector('.edit-product-form').addEventListener('submit', function(e) {
+            const priceInput = document.querySelector('input[name="price"]');
+            const stockInput = document.querySelector('input[name="stock"]');
+            const unitSelect = document.querySelector('select[name="product_unit"]');
+            
+            const price = parseFloat(priceInput.value);
+            const stock = parseFloat(stockInput.value);
+            const unit = unitSelect.value;
+            
+            // Check if price is valid
+            if (price <= 0) {
+                e.preventDefault();
+                alert('Price must be greater than zero.');
+                return;
+            }
+        
+            // Only validate stock if it has been modified
+            if (stockInput.getAttribute('data-original-value') !== stockInput.value) {
+                if (unit === 'kg') {
+                    if (stock < 0.01) {
+                        e.preventDefault();
+                        alert('Minimum stock for kg products should be 0.01 kg');
+                        return;
+                    }
+                } else if (unit === 'piece') {
+                    if (!Number.isInteger(stock) || stock <= 0) {
+                        e.preventDefault();
+                        alert('Stock must be a whole number greater than zero for piece units');
+                        return;
+                    }
+                }
+            }
+        });
+        
+        // Store original value when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            const stockInput = document.querySelector('input[name="stock"]');
+            stockInput.setAttribute('data-original-value', stockInput.value);
+        });
+        
+        // Update step attribute based on unit selection
+        document.querySelector('select[name="product_unit"]').addEventListener('change', function() {
+            const stockInput = document.querySelector('input[name="stock"]');
+            if (this.value === 'kg') {
+                stockInput.step = '0.01';
+            } else {
+                stockInput.step = '1';
+            }
+        });
     </script>
 </body>
 </html>

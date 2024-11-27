@@ -13,14 +13,14 @@
         <nav class="sidebar">
             <div class="brand">meatsouk</div>
             <ul>
-                <li><a href="#">Dashboard</a></li>
+                <li><a href="{% url 'admin_page' %}">Dashboard</a></li>
                 <li><a href="{% url 'user_page' %}">Users</a></li>
                 <li><a href="{% url 'admin_category' %}">Category</a></li>
                 <li><a href="{% url 'admin_product_view' %}">Products</a></li>
                 <li><a href="{% url 'admin_order_list' %}">Orders</a></li>
                 <li><a href="{% url 'coupon' %}">Coupons</a></li>
                 <li><a href="{% url 'admin_offer_management' %}">Offer</a></li>
-                <li><a href="#">Pin code</a></li>
+                <li><a href="{% url 'admin_pincode' %}">Pin code</a></li>
                 <li><a href="#">Sales reprot</a></li>
             </ul>
         </nav>
@@ -95,8 +95,8 @@
                     <div class="table-header">
                         <h2>Sales Report Table</h2>
                         <div class="export-buttons">
-                            <button class="export-btn">PDF</button>
-                            <button class="export-btn">Excel</button>
+                            <button class="export-btn" onclick="window.location.href='{% url 'download_sales_report_pdf' %}?{{ request.GET.urlencode }}'">PDF</button>
+                            <button class="export-btn" onclick="window.location.href='{% url 'download_sales_report_excel' %}?{{ request.GET.urlencode }}'">Excel</button>
                         </div>
                     </div>
                     <table class="data-table">
@@ -104,7 +104,8 @@
                             <tr>
                                 <th>Date</th>
                                 <th>Total Sales Revenue</th>
-                                <th>Total Discount</th>
+                                <th>Offer Discount</th>
+                                <th>Coupon Discount</th>
                                 <th>Net Sales</th>
                                 <th>Total Units Sold</th>
                             </tr>
@@ -113,10 +114,11 @@
                             {% for report in sales_report %}
                             <tr>
                                 <td>{{ report.date }}</td>
-                                <td>{{ report.total_sales_revenue|floatformat:2 }}</td>
-                                <td>{{ report.total_discount|floatformat:2 }}</td>
-                                <td>{{ report.net_sales|floatformat:2 }}</td>
-                                <td>{{ report.total_units_sold }}</td>
+                                <td>{% if report.total_sales_revenue is not None %}{{ report.total_sales_revenue|floatformat:2 }}{% else %}None{% endif %}</td>
+                                <td>{% if report.offer_discount is not None %}{{ report.offer_discount|floatformat:2 }}{% else %}None{% endif %}</td>
+                                <td>{% if report.coupon_discount is not None %}{{ report.coupon_discount|floatformat:2 }}{% else %}None{% endif %}</td>
+                                <td>{% if report.net_sales is not None %}{{ report.net_sales|floatformat:2 }}{% else %}None{% endif %}</td>
+                                <td>{% if report.total_units_sold is not None %}{{ report.total_units_sold }}{% else %}None{% endif %}</td>
                             </tr>
                             {% endfor %}
                         </tbody>

@@ -57,5 +57,5 @@ def edit_coupon(request,coupon_id):
         coupon.save()
         
         messages.success(request,"Coupon Successfully edited")
-        return redirect('edit_coupon')
+        return redirect('edit_coupon', coupon_id=coupon_id)
     return render(request, 'admin_coupon_edit.html', {'coupon': coupon})

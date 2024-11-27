@@ -12,24 +12,58 @@ from django.contrib import messages
 
 def add_to_cart(request):
     if request.method == 'POST' and request.user.is_authenticated:
-        product_id = request.POST.get('product_id')
-        quantity = request.POST.get('quantity', 0.5)
-        product = get_object_or_404(Products, id=product_id)
+        try:
+            # Parse JSON data from request body
+            data = json.loads(request.body)
+            product_id = data.get('product_id')
+            quantity = data.get('quantity')
 
-        cart, created = Cart.objects.get_or_create(user=request.user)
-        
-        cart_item = CartItems.objects.filter(cart=cart, products=product).first()
-        if cart_item:
-            messages.warning(request, 'Item already in your cart. You can update the quantity from the cart.')
-        else:   
-            cart_item, created = CartItems.objects.get_or_create(cart=cart, products=product)
-            cart_item.quantity = float(quantity)
-            cart_item.save()
-            messages.success(request, 'Item added to cart.')
-        return redirect('single_product', product_id=product_id)
+            product = get_object_or_404(Products, id=product_id)
+            cart, created = Cart.objects.get_or_create(user=request.user)
+            
+            # Check if item already exists in cart
+            cart_item = CartItems.objects.filter(cart=cart, products=product).first()
+            
+            if cart_item:
+                return JsonResponse({
+                    'success': True,
+                    'already_in_cart': True,
+                    'message': 'Item already in your cart. You can update the quantity from the cart.'
+                })
+            else:
+                # Create new cart item
+                cart_item = CartItems.objects.create(
+                    cart=cart,
+                    products=product,
+                    quantity=float(quantity)
+                )
+                
+                # Convert to integer if product unit is piece
+                if product.product_unit == 'piece':
+                    cart_item.quantity = int(cart_item.quantity)
+                    cart_item.save()
+
+                return JsonResponse({
+                    'success': True,
+                    'already_in_cart': False,
+                    'message': 'Item added to cart successfully.'
+                })
+
+        except json.JSONDecodeError:
+            return JsonResponse({
+                'success': False,
+                'message': 'Invalid JSON data'
+            })
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'message': str(e)
+            })
     
-    messages.error(request, 'User not authenticated or invalid request.')
-    return redirect('single_product', product_id=product_id)
+    return JsonResponse({
+        'success': False,
+        'message': 'User not authenticated or invalid request.'
+    })
 
 def cart_view(request):
     if request.user.is_authenticated:

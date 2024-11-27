@@ -8,6 +8,8 @@ from django.views.decorators.cache import never_cache
 from pincode.models import Pincode
 from offer.models import Product_Offers, Category_Offers
 from datetime import datetime
+from django.http import JsonResponse
+from decimal import Decimal
 # Create your views here.
 
 @login_required(login_url='admin_login')
@@ -32,116 +34,194 @@ def admin_product_view(request):
 @login_required(login_url='admin_login')
 @never_cache
 def admin_product_add(request):
-    categories = Category.objects.all()  # Fetch all categories
-    pincodes = Pincode.objects.all()  # Fetch all available pincodes
+    categories = Category.objects.all()
+    pincodes = Pincode.objects.all()
     error_message = None
 
     if request.method == 'POST':
-        product_name = request.POST.get('product_name', '').strip()  # Remove leading/trailing whitespace
+        product_name = request.POST.get('product_name', '').strip()
         category_id = request.POST.get('category')
         price = request.POST.get('price')
         stock = request.POST.get('stock')
+        product_unit = request.POST.get('product_unit')
         product_description = request.POST.get('product_description')
         image1 = request.FILES.get('image1')
         image2 = request.FILES.get('image2')
         image3 = request.FILES.get('image3')
         selected_pincodes = request.POST.getlist('pincodes')
 
-        # Validation
         if not product_name:
             error_message = "Product name is required and cannot be blank."
-        elif not category_id or not price or not stock or not product_description:
+        elif not category_id or not price or not stock or not product_unit or not product_description:
             error_message = "All fields are required."
-        elif float(price) <= 0:
+        elif Decimal(price) <= Decimal('0'):
             error_message = "Price must be greater than zero."
-        elif int(stock) <= 0:
-            error_message = "Stock must be greater than zero."
         elif not image1 or not image2 or not image3:
             error_message = "All three product images are required."
         else:
             try:
-                # Check if a product with the same name already exists
-                if Products.objects.filter(product_name__iexact=product_name).exists():
-                    error_message = "A product with this name already exists."
+                if product_unit == 'kg':
+                    try:
+                        stock_decimal = Decimal(stock)
+                        if stock_decimal <= Decimal('0'):
+                            error_message = "Stock must be greater than zero."
+                        elif stock_decimal < Decimal('0.01'):
+                            error_message = "Minimum stock for kg products should be 0.01 kg"
+                    except (ValueError, TypeError):
+                        error_message = "Invalid stock value for kg unit"
+                
+                elif product_unit == 'piece':
+                    try:
+                        stock_decimal = Decimal(stock)
+                        if not stock_decimal.as_tuple().exponent >= 0:
+                            error_message = "Stock must be a whole number for piece units"
+                        elif stock_decimal <= Decimal('0'):
+                            error_message = "Stock must be greater than zero."
+                    except (ValueError, TypeError):
+                        error_message = "Stock must be a whole number for piece units"
+                
                 else:
-                    # Proceed with saving the product
-                    category = Category.objects.get(id=category_id)
-                    product = Products(
-                        product_name=product_name,
-                        category=category,
-                        price=price,
-                        stock=stock,
-                        product_description=product_description,
-                        image1=image1,
-                        image2=image2,
-                        image3=image3
-                    )
-                    product.save()
+                    error_message = "Invalid unit type. Must be either 'kg' or 'piece'"
 
-                    # Save selected pincodes to product
-                    product.pincode.set(selected_pincodes)
+                if not error_message:
+                    if Products.objects.filter(product_name__iexact=product_name, product_unit=product_unit).exists():
+                        error_message = f"A product variant with the name '{product_name}' and unit '{product_unit}' already exists."
+                    else:
+                        category = Category.objects.get(id=category_id)
+                        product = Products(
+                            product_name=product_name,
+                            category=category,
+                            price=Decimal(price),
+                            stock=stock_decimal,
+                            product_unit=product_unit,
+                            product_description=product_description,
+                            image1=image1,
+                            image2=image2,
+                            image3=image3
+                        )
+                        product.save()
 
-                return redirect('admin_product_view')
+                        product.pincode.set(selected_pincodes)
+
+                        return redirect('admin_product_view')
+
             except ValidationError as e:
                 error_message = str(e)
 
     context = {
         'categories': categories,
         'pincodes': pincodes,
-        'error_message': error_message
+        'error_message': error_message,
+        'unit_choices': Products.UNIT_CHOICES,
     }
     return render(request, 'admin_product_add.html', context)
 
 @login_required(login_url='admin_login')
 @never_cache
 def admin_product_edit(request, product_id):
-    product = get_object_or_404(Products, id=product_id)  # Get the product by ID
+    product = get_object_or_404(Products, id=product_id)
     categories = Category.objects.all()
     product_pincodes = product.pincode.values_list('id', flat=True)
     pincodes = Pincode.objects.all()
     error_message = None
 
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest' and request.method == 'POST':
+        try:
+            selected_pincodes = request.POST.getlist('pincodes')
+            product.pincode.clear()
+            if selected_pincodes:
+                pincodes = Pincode.objects.filter(id__in=selected_pincodes)
+                product.pincode.add(*pincodes)
+            product.save()
+            return JsonResponse({
+                'status': 'success', 
+                'message': 'Pincodes updated successfully'
+            })
+        except Exception as e:
+            return JsonResponse({
+                'status': 'error', 
+                'message': str(e)
+            }, status=400)
+
     if request.method == 'POST':
-        product_name = request.POST.get('product_name')
+        product_name = request.POST.get('product_name', '').strip()
         category_id = request.POST.get('category')
         price = request.POST.get('price')
         stock = request.POST.get('stock')
+        product_unit = request.POST.get('product_unit')
         product_description = request.POST.get('product_description')
         image1 = request.FILES.get('image1')
         image2 = request.FILES.get('image2')
         image3 = request.FILES.get('image3')
-        selected_pincodes = request.POST.getlist('pincodes')
+        selected_pincodes = request.POST.getlist('pincodes') or list(product_pincodes)
 
-        # Validation
-        if not product_name or not category_id or not price or not stock or not product_description:
+        if not product_name:
+            error_message = "Product name is required and cannot be blank."
+        elif not category_id or not price or not stock or not product_unit or not product_description:
             error_message = "All fields are required."
-        elif '*' in product_name or '*' in product_description:
-            error_message = "Product name and description cannot contain the '*' character."
-        elif float(price) <= 0:
+        elif Decimal(price) <= Decimal('0'):
             error_message = "Price must be greater than zero."
-        elif int(stock) <= 0:
-            error_message = "Stock must be greater than zero."
         else:
             try:
-                category = Category.objects.get(id=category_id)
-                product.product_name = product_name
-                product.category = category
-                product.price = price
-                product.stock = stock
-                product.product_description = product_description
+                if product_unit == 'piece':
+                    try:
+                        if Decimal(str(stock)) != product.stock:
+                            stock_decimal = Decimal(stock)
+                            if not stock_decimal.as_tuple().exponent >= 0:
+                                error_message = "Stock must be a whole number for piece units"
+                            elif stock_decimal <= Decimal('0'):
+                                error_message = "Stock must be greater than zero."
+                        else:
+                            stock_decimal = product.stock
+                    except (ValueError, TypeError):
+                        error_message = "Stock must be a whole number for piece units"
+                elif product_unit == 'kg':
+                    try:
+                        if Decimal(str(stock)) != product.stock:
+                            stock_decimal = Decimal(stock)
+                            if stock_decimal <= Decimal('0'):
+                                error_message = "Stock must be greater than zero."
+                            elif stock_decimal < Decimal('0.01'):
+                                error_message = "Minimum stock for kg products should be 0.01 kg"
+                        else:
+                            stock_decimal = product.stock
+                    except (ValueError, TypeError):
+                        error_message = "Invalid stock value for kg unit"
 
-                # Update product images if new ones are uploaded
-                if image1:
-                    product.image1 = image1
-                if image2:
-                    product.image2 = image2
-                if image3:
-                    product.image3 = image3
+                if not error_message:
+                    duplicate_exists = Products.objects.filter(
+                        product_name__iexact=product_name,
+                        product_unit=product_unit
+                    ).exclude(id=product_id).exists()
+                    
+                    if duplicate_exists:
+                        error_message = f"A product variant with the name '{product_name}' and unit '{product_unit}' already exists."
+                    else:
+                        category = Category.objects.get(id=category_id)
+                        product.product_name = product_name
+                        product.category = category
+                        product.price = Decimal(price)
+                        product.stock = stock_decimal
+                        product.product_unit = product_unit
+                        product.product_description = product_description
 
-                product.save()
-                product.pincode.set(selected_pincodes)
-                return redirect('admin_product_view')  # Redirect after successful product edit
-            except Exception as e:
+                        if image1:
+                            product.image1 = image1
+                        if image2:
+                            product.image2 = image2
+                        if image3:
+                            product.image3 = image3
+
+                        product.save()
+
+                        product.pincode.clear()
+                        if selected_pincodes:
+                            pincodes = Pincode.objects.filter(id__in=selected_pincodes)
+                            product.pincode.add(*pincodes)
+
+                        return redirect('admin_product_view')
+
+            except ValidationError as e:
                 error_message = str(e)
 
     context = {
@@ -149,39 +229,32 @@ def admin_product_edit(request, product_id):
         'categories': categories,
         'pincodes': pincodes,
         'product_pincodes': product_pincodes,
-        'error_message': error_message
+        'error_message': error_message,
+        'unit_choices': Products.UNIT_CHOICES,
     }
     return render(request, 'admin_product_edit.html', context)
 
 @login_required(login_url='login')
 @never_cache
 def shop(request):
-    # Get all categories
     categories = Category.objects.filter(is_listed=True)
     
-    # Get selected category from the query parameters, default to 'All'
     selected_category = request.GET.get('category', 'All')
 
-    # searched query from the search place
     search_query = request.GET.get('query', None)
 
-    # taking the sort
     sort_option = request.GET.get('sort', None)
 
-    # Filter products based on the selected category
     if selected_category == 'All':
         products = Products.objects.filter(category__is_listed=True, is_listed=True)
     else:
         products = Products.objects.filter(category__category_name=selected_category, is_listed=True)
     
-    # Retrieve pincode or city from session
     pincode = request.session.get('pincode')
     city = request.session.get('city')
     error_message = None
 
-    # Filter products based on session data
     if pincode:
-        # Filter by pincode if it exists in session
         try:
             pincode_obj = Pincode.objects.get(pincode=pincode, is_listed=True)
             products = products.filter(pincode__city=pincode_obj.city)
@@ -189,10 +262,8 @@ def shop(request):
             error_message = "Products are not available for this pincode. Please enter another pincode or select a different location."
             products = products.none()
     elif city:
-        # Filter by city if pincode is not set but city is
         products = products.filter(pincode__city=city)
 
-    # Filter products based on search query
     if search_query:
         products = products.filter(
             Q(product_name__icontains=search_query) |
@@ -203,7 +274,6 @@ def shop(request):
     if not products.exists() and search_query:
         error_message = f"No products found for '{search_query}'"
 
-        # sorting application for products
     if sort_option == 'price_asc':
         products = products.order_by('price')
     elif sort_option == 'price_desc':
@@ -217,7 +287,6 @@ def shop(request):
     products_with_offers = []
 
     for product in products:
-        # Get product-specific and category-specific offers
         product_offer = Product_Offers.objects.filter(
             product=product, valid_from__lte=now, valid_to__gte=now
         ).first()
@@ -232,7 +301,6 @@ def shop(request):
             (category_offer.offer_discount / product.price) * 100 if category_offer else 0
         )
 
-        # Determine the best offer
         best_offer = None
         final_price = product.price
         discount_percentage = 0
