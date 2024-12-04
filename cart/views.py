@@ -6,7 +6,9 @@ from cart.models import CartItems
 import json
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib import messages
-
+from datetime import datetime
+from offer.models import Product_Offers, Category_Offers
+from decimal import Decimal
 # Create your views here.
 
 
@@ -67,16 +69,67 @@ def add_to_cart(request):
 
 def cart_view(request):
     if request.user.is_authenticated:
-
         cart, created = Cart.objects.get_or_create(user=request.user)
         user_cart = cart.items.filter(products__is_listed=True, products__category__is_listed=True)
+
+        cart_items = []
+        subtotal = Decimal(0)  # Initialize subtotal as a Decimal
+
+        for item in user_cart:
+            product = item.products
+            price = Decimal(product.price)  # Ensure price is Decimal
+
+            # Check for product-specific offers
+            product_offer = Product_Offers.objects.filter(
+                product=product,
+                valid_from__lte=datetime.now(),
+                valid_to__gte=datetime.now()
+            ).first()
+
+            # Check for category-specific offers
+            category_offer = Category_Offers.objects.filter(
+                category=product.category,
+                valid_from__lte=datetime.now(),
+                valid_to__gte=datetime.now()
+            ).first()
+
+            # Apply the highest offer
+            discount = Decimal(0)  # Initialize discount as a Decimal
+            if product_offer and category_offer:
+                discount = max(Decimal(product_offer.offer_percentage), Decimal(category_offer.offer_percentage))
+            elif product_offer:
+                discount = Decimal(product_offer.offer_percentage)
+            elif category_offer:
+                discount = Decimal(category_offer.offer_percentage)
+
+            # Calculate the discounted price
+            discounted_price = price * (Decimal(1) - (discount / Decimal(100)))
+            subtotal += discounted_price * Decimal(item.quantity)  # Multiply with Decimal quantity
+
+            cart_items.append({
+                'item': item,
+                'discounted_price': round(discounted_price, 2),
+                'total_price': round(discounted_price * Decimal(item.quantity), 2),  # Convert quantity to Decimal
+            })
+
+        # Calculate delivery charge and total
+        delivery_charge = Decimal(0) if subtotal > Decimal(500) else Decimal(40)
+        total = subtotal + delivery_charge
+
         context = {
-            'items': user_cart,
+            'items': cart_items,
+            'subtotal': round(subtotal, 2),
+            'delivery_charge': round(delivery_charge, 2),
+            'total': round(total, 2),
         }
     else:
         context = {
             'items': [],
+            'subtotal': Decimal(0),
+            'delivery_charge': Decimal(0),
+            'total': Decimal(0),
         }
+
     return render(request, 'user/cart.html', context)
 
 @csrf_exempt

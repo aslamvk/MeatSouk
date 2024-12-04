@@ -21,31 +21,43 @@ def admin_category(request):
 @never_cache
 def add_admin_category(request):
     if request.method == 'POST':
-        category_name = request.POST.get('category_name')
-        category_image = request.FILES.get('category_image')
-        category_unit = request.POST.get('category_unit')
-        is_listed = request.POST.get('is_listed') == 'on' 
+        category_name = request.POST.get('category_name', '').strip()
+        is_listed = request.POST.get('is_listed') == 'on'
 
-
-        if Category.objects.filter(category_name=category_name).exists():
-            messages.error(request, "Category already exists.")
+        if not category_name:
+            messages.error(request, "Category name cannot be empty.")
             return redirect('add_admin_category')
 
-        if not category_name.isalpha():
-            messages.error(request, "Category name must be alphabetic.")
+        if len(category_name) < 2:
+            messages.error(request, "Category name must be at least 2 characters long.")
             return redirect('add_admin_category')
 
-        new_category = Category(
-            category_name=category_name,
-            category_image=category_image,
-            category_unit=category_unit,
-            is_listed=is_listed
-        )
-        new_category.save()
-        messages.success(request, "Category added successfully.")
-        return redirect('admin_category')
+        if not all(char.isalpha() or char.isspace() for char in category_name):
+            messages.error(request, "Category name must contain only alphabets.")
+            return redirect('add_admin_category')
 
-    
+        if Category.objects.filter(category_name__iexact=category_name).exists():
+            messages.error(request, f"Category '{category_name}' already exists.")
+            return redirect('add_admin_category')
+
+        category_name = ' '.join(category_name.split())  # Normalize spaces
+
+        try:
+
+            new_category = Category(
+                category_name=category_name,
+                is_listed=is_listed
+            )
+            new_category.save()
+            
+            messages.success(request, f"Category '{category_name}' added successfully.")
+            return redirect('admin_category')
+
+        except Exception as e:
+
+            messages.error(request, f"An error occurred: {str(e)}")
+            return redirect('add_admin_category')
+
     return render(request, 'admin_category_add.html')
 
 @login_required(login_url='admin_login')
@@ -54,31 +66,38 @@ def edit_admin_category(request, category_id):
     category = get_object_or_404(Category, id=category_id)
     
     if request.method == 'POST':
-        category_name = request.POST.get('category_name')
-        category_unit = request.POST.get('category_unit')
-        category_image = request.FILES.get('category_image')  
+        category_name = request.POST.get('category_name', '').strip()
+        is_listed = request.POST.get('is_listed') == 'on' 
         
         
-        if not category_name or not category_unit:
-            messages.error(request, "Category name and unit are required.")
-        else:
-            
-            category.category_name = category_name
-            category.category_unit = category_unit
-            
-            if category_image:
-                
-                if category.category_image:
-                    default_storage.delete(category.category_image.path)
-                
-                
-                category.category_image = category_image
+        if not category_name:
+            messages.error(request, "Category name cannot be empty.")
+            return redirect('edit_admin_category', category_id=category_id)
 
-            
+        if len(category_name) < 2:
+            messages.error(request, "Category name must be at least 2 characters long.")
+            return redirect('edit_admin_category', category_id=category_id)
+
+        if not all(char.isalpha() or char.isspace() for char in category_name):
+            messages.error(request, "Category name must contain only alphabets.")
+            return redirect('edit_admin_category', category_id=category_id)
+        if Category.objects.filter(category_name__iexact=category_name).exclude(id=category_id).exists():
+            messages.error(request, f"Category '{category_name}' already exists.")
+            return redirect('edit_admin_category', category_id=category_id)
+
+        category_name = ' '.join(category_name.split())
+
+        try:
+            category.category_name = category_name
+            category.is_listed = is_listed
             category.save()
             
             messages.success(request, 'Category updated successfully.')
             return redirect('admin_category')
+
+        except Exception as e:
+            messages.error(request, f"An error occurred: {str(e)}")
+            return redirect('edit_admin_category', category_id=category_id)
     
     return render(request, 'admin_category_edit.html', {'category': category})
 

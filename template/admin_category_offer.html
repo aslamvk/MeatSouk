@@ -92,8 +92,8 @@
                                     </select>
                                 </div>
                                 <div class="form-group">
-                                    <label for="offer_price">Offer Price</label>
-                                    <input type="number" step="0.01" class="form-control" id="offer_discount" name="offer_discount" max="9999999999" required>
+                                    <label for="offer_percentage">Offer Percentage (Max 80%)</label>
+                                    <input type="number" id="offer_percentage" name="offer_percentage" step="0.01" max="80" required>
                                 </div>
                                 <div class="form-group">
                                     <label for="valid_from">Valid From</label>
@@ -130,6 +130,7 @@
                                         <th>Id</th>
                                         <th>Category Name</th>
                                         <th>Offer Name</th>
+                                        <th>Offer Percentage</th>
                                         <th>Offer Details</th>
                                         <th>Start Date</th>
                                         <th>End Date</th>
@@ -142,6 +143,7 @@
                                             <td>{{ offer.id }}</td>
                                             <td>{{ offer.category.category_name }}</td>
                                             <td>{{ offer.offer_name }}</td>
+                                            <td>{{ offer.offer_percentage }} %</td>
                                             <td>{{ offer.offer_details }}</td>
                                             <td>{{ offer.valid_from }}</td>
                                             <td>{{ offer.valid_to }}</td>

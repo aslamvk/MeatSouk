@@ -38,6 +38,7 @@ from xhtml2pdf import pisa # type: ignore
 import random
 from io import BytesIO
 from order.models import Invoice
+from django.views.decorators.cache import never_cache
 
 
 # Create your views here.
@@ -46,6 +47,7 @@ razorpay_client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZOR
 
 
 @login_required(login_url='login')
+@never_cache
 def place_order(request):
     user = request.user
     address = Address.objects.filter(user=user, is_listed=True)
@@ -72,30 +74,32 @@ def place_order(request):
             category=product.category, valid_from__lte=now, valid_to__gte=now
         ).first()
 
-        product_discount = Decimal(product_offer.offer_discount if product_offer else '0.00')
-        category_discount = Decimal(category_offer.offer_discount if category_offer else '0.00')
+        product_discount = actual_price * (Decimal(product_offer.offer_percentage) / 100) if product_offer else Decimal('0.00')
+        category_discount = actual_price * (Decimal(category_offer.offer_percentage) / 100) if category_offer else Decimal('0.00')
         best_offer_discount = max(product_discount, category_discount)
         
         if best_offer_discount:
-            total_offer_discount = (best_offer_discount * quantity)
-        offer_price = Decimal('0.00')
-        if best_offer_discount:
-            offer_price = actual_price - best_offer_discount
-        else:
-            offer_price = actual_price
-            
+            total_offer_discount += best_offer_discount * quantity
+
+        offer_price = actual_price - best_offer_discount
         item_subtotal = offer_price * quantity
         subtotal_price += item_subtotal
 
         cart_items_with_subtotals.append({
             'item': item,
             'offer_price': offer_price,
-            'item_subtotal': item_subtotal
+            'item_subtotal': item_subtotal,
         })
+    if coupon_code:
+        applied_coupon = Coupon.objects.filter(code=coupon_code).first()
+        if applied_coupon and subtotal_price < applied_coupon.minimum_purchase_amount:
+            request.session.pop('coupon_code', None)
+            request.session.pop('discount_value', None)
+            discount_value = Decimal('0.00')
+            messages.warning(request, f"Coupon '{coupon_code}' has been removed as the subtotal is below the minimum purchase requirement.")
 
     
     delivery_charge = Decimal('0.00') if subtotal_price > Decimal('500.00') else Decimal('40.00')
-
     total_price = subtotal_price - discount_value + delivery_charge
 
     available_coupons = []
@@ -124,9 +128,9 @@ def place_order(request):
                 'address': address,
                 'cart_items': cart_items_with_subtotals,
                 'cart': cart,
-                'subtotal_price': subtotal_price,
-                'delivery_charge': delivery_charge,
-                'total_price': total_price,
+                'subtotal_price': round(subtotal_price, 2),
+                'delivery_charge': round(delivery_charge, 2),
+                'total_price': round(total_price, 2),
                 'error_message': 'Please select an address or payment type.'
             })
 
@@ -154,9 +158,9 @@ def place_order(request):
                     'address':address,
                     'cart_items':cart_items_with_subtotals,
                     'cart':cart,
-                    'subtotal_price':subtotal_price,
-                    'delivery_charge':delivery_charge,
-                    'total_price':total_price,
+                    'subtotal_price': round(subtotal_price, 2),
+                    'delivery_charge': round(delivery_charge, 2),
+                    'total_price': round(total_price, 2),
                     'error_message':'Insufficient balance in your wallet. Please choose another payment method.'
                 })
             wallet.balance -= total_price
@@ -241,9 +245,9 @@ def place_order(request):
                 'address': address,
                 'cart_items': cart_items_with_subtotals,
                 'cart': cart,
-                'subtotal_price': subtotal_price,
-                'delivery_charge': delivery_charge,
-                'total_price': total_price,
+                'subtotal_price': round(subtotal_price, 2),
+                'delivery_charge': round(delivery_charge, 2),
+                'total_price': round(total_price, 2),
                 'error_message': 'Cash on Delivery is not available for orders above ₹1000.'
             })
 
@@ -308,13 +312,14 @@ def place_order(request):
         'address': address,
         'cart_items': cart_items_with_subtotals,
         'cart': cart,
-        'subtotal_price': subtotal_price,
-        'delivery_charge': delivery_charge,
-        'total_price': total_price,
+        'subtotal_price': round(subtotal_price, 2),
+        'delivery_charge': round(delivery_charge, 2),
+        'total_price': round(total_price, 2),
         'coupon': available_coupons
     })
 
 @login_required(login_url='login')
+@never_cache
 def add_address_in_checkout(request):
     
      
@@ -351,12 +356,15 @@ def add_address_in_checkout(request):
 
     return render(request, "user/checkout_add_address.html")
 
+@login_required(login_url='login')
+@never_cache
 def user_order(request):
     user = request.user
     orders = Order.objects.filter(user=user).order_by('-created_at')
     return render(request, 'user/user_order.html', {'orders':orders})
 
 @login_required(login_url='login')
+@never_cache
 def user_single_order_items(request, order_id):
 
     order = get_object_or_404(Order, id = order_id)
@@ -374,6 +382,7 @@ def user_single_order_items(request, order_id):
     return render(request, 'user/user_single_order_items.html', context)
 
 @login_required(login_url='login')
+@never_cache
 def user_order_details(request,item_id):
     order_items = get_object_or_404(OrderItem, id=item_id)
     order = order_items.order
@@ -398,10 +407,14 @@ def user_singleitem_cancel(request,order_item_id):
 
     return redirect('user_single_order_items', order_id = order_item.order.id)
 
+@login_required(login_url='admin_login')
+@never_cache
 def admin_order_list(request):
     orders = Order.objects.all().order_by('-created_at')
     return render(request, 'admin_order_list.html',{'orders':orders})
 
+@login_required(login_url='admin_login')
+@never_cache
 def admin_single_order_details(request, id):
     order = get_object_or_404(Order,id=id)
     order_items = order.items.all()
@@ -435,7 +448,7 @@ def update_order_status(request, id):
 
 @csrf_exempt
 def razorpay_payment(request):
-    if request.method=='POST':
+    if request.method == 'POST':
         payment_id = request.POST.get('razorpay_payment_id')
         razorpay_order_id = request.POST.get('razorpay_order_id')
         razorpay_signature = request.POST.get('razorpay_signature')
@@ -463,14 +476,14 @@ def razorpay_payment(request):
                 category=product.category, valid_from__lte=now, valid_to__gte=now
             ).first()
 
-            product_discount = Decimal(product_offer.offer_discount if product_offer else '0.00')
-            category_discount = Decimal(category_offer.offer_discount if category_offer else '0.00')
+            product_discount = actual_price * (Decimal(product_offer.offer_percentage) / 100) if product_offer else Decimal('0.00')
+            category_discount = actual_price * (Decimal(category_offer.offer_percentage) / 100) if category_offer else Decimal('0.00')
             best_offer_discount = max(product_discount, category_discount)
 
             if best_offer_discount:
-                total_offer_discount = (best_offer_discount * quantity)
+                total_offer_discount += best_offer_discount * quantity
 
-            offer_price = actual_price - best_offer_discount if best_offer_discount else actual_price
+            offer_price = actual_price - best_offer_discount
             item_subtotal = offer_price * quantity
             subtotal_price += item_subtotal
 
@@ -483,7 +496,6 @@ def razorpay_payment(request):
         # Delivery charge logic
         delivery_charge = Decimal('0.00') if subtotal_price > Decimal('500.00') else Decimal('40.00')
 
-        # Initialize discount values
         discount_value = Decimal(request.session.get('discount_value', '0.00'))
         coupon_code = request.session.get('coupon_code')
 
@@ -519,11 +531,12 @@ def razorpay_payment(request):
             payment_status = 'Success'
         except razorpay.errors.SignatureVerificationError:
             pass
+
         new_order = Order.objects.create(
             user=user,
             address=selected_address,
             payment_type='Razor pay',
-            total_price = total_price,
+            total_price=total_price,
             payment_status=payment_status,
             coupon_code=coupon_code,
             coupon_discount=discount_value,
@@ -537,7 +550,6 @@ def razorpay_payment(request):
             else:
                 item_discount = discount_value
 
-
         for item in cart_items:
             quantity = Decimal(item.quantity)
             actual_price = Decimal(item.products.price)
@@ -549,11 +561,11 @@ def razorpay_payment(request):
                 category=item.products.category, valid_from__lte=now, valid_to__gte=now
             ).first()
 
-            product_discount = Decimal(product_offer.offer_discount if product_offer else '0.00')
-            category_discount = Decimal(category_offer.offer_discount if category_offer else '0.00')
+            product_discount = actual_price * (Decimal(product_offer.offer_percentage) / 100) if product_offer else Decimal('0.00')
+            category_discount = actual_price * (Decimal(category_offer.offer_percentage) / 100) if category_offer else Decimal('0.00')
             best_offer_discount = max(product_discount, category_discount)
 
-            offer_price = actual_price - best_offer_discount if best_offer_discount else actual_price
+            offer_price = actual_price - best_offer_discount
             item_subtotal_price = (offer_price * quantity) - item_discount
 
             OrderItem.objects.create(
@@ -595,6 +607,7 @@ def razorpay_payment(request):
             return render(request, 'user/order_success.html', {'error_message': 'Payment failed. Your order has been placed but payment was not completed.'})
 
     return render(request, 'user/order_success.html', {'error_message': 'Invalid request.'})
+
 
 def retry_payment(request, order_id):
     order = get_object_or_404(Order, id=order_id)
@@ -756,6 +769,8 @@ def user_return_order_item(request,order_item_id):
 
     return redirect('user_single_order_items',order_id=order_item.order.id)
 
+@login_required(login_url='admin_login')
+@never_cache
 def sales_report(request):
 
     startdate = request.GET.get('startdate')
@@ -835,6 +850,7 @@ def sales_report(request):
     ).aggregate(
         total=Coalesce(Sum('valid_sales_price'), Value(0, output_field=DecimalField()))
     )['total']
+    
     total_order_count = Order.objects.count()
     total_units_sold = OrderItem.objects.exclude(
         status__in=['Cancelled', 'Approve Return']

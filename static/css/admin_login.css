@@ -122,6 +122,14 @@ h2 {
 p {
   margin: 20px 0;
 }
+.error-message {
+  color: red;
+  font-size: 0.8em;
+  margin-top: 5px;
+}
+.input-error {
+  border-color: red;
+}
 
 @media (max-width: 400px) {
   .login-box {
@@ -132,3 +140,13 @@ p {
     font-size: 28px;
   }
 }
+.messages {
+  margin-bottom: 15px;
+}
+
+.alert {
+  padding: 10px;
+  margin-bottom: 10px;
+  border-radius: 4px;
+}
+

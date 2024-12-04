@@ -24,62 +24,65 @@ def signup(request):
     if request.user.is_authenticated:
         return redirect('homepage')
     if request.method == 'POST':
-        first_name = request.POST.get('first-name')
-        last_name = request.POST.get('last-name')
-        email = request.POST.get('email')
-        username = request.POST.get('username')
-        password = request.POST.get('password')
-        re_password = request.POST.get('re-enter-password')
-
-        # Dictionary to store errors
+        form_data = {
+            'first_name': request.POST.get('first-name'),
+            'last_name': request.POST.get('last-name'),
+            'email': request.POST.get('email'),
+            'username': request.POST.get('username'),
+            'password': request.POST.get('password'),
+            're_password': request.POST.get('re-enter-password')
+        }
         errors = {}
 
         # Validate first name and last name (only letters allowed)
-        if not re.match(r'^[A-Za-z]+$', first_name):
+        if not re.match(r'^[A-Za-z]+$', form_data['first_name']):
             errors['first_name'] = 'First name can only contain letters.'
-        if not re.match(r'^[A-Za-z]+$', last_name):
+        if not re.match(r'^[A-Za-z]+$', form_data['last_name']):
             errors['last_name'] = 'Last name can only contain letters.'
 
         # Validate username (letters, numbers, and underscores allowed)
-        if not re.match(r'^[A-Za-z0-9_]+$', username):
+        if not re.match(r'^[A-Za-z0-9_]+$', form_data['username']):
             errors['username'] = 'Username can only contain letters, numbers, and underscores.'
 
         # Check if passwords match
-        if password != re_password:
+        if form_data['password'] != form_data['re_password']:
             errors['password_mismatch'] = 'Passwords do not match.'
 
         # Password length validation
-        if len(password) < 8:
+        if len(form_data['password']) < 8:
             errors['password_length'] = 'Password must be at least 8 characters long.'
 
         # Check if the email is unique
-        if User.objects.filter(email=email).exists():
+        if User.objects.filter(email=form_data['email']).exists():
             errors['email_exists'] = 'This email is already registered.'
 
         # Check if the username is unique
-        if User.objects.filter(username=username).exists():
+        if User.objects.filter(username=form_data['username']).exists():
             errors['username_exists'] = 'This username is already taken.'
 
         # If there are any errors, return them with the form
         if errors:
-            return render(request, 'user/index.html', {'errors': errors})
+            return render(request, 'user/index.html', {
+                'errors': errors,
+                'form_data': form_data
+            })
 
         # Generate OTP and store user data in session
         otp = generate_otp()
         request.session['otp'] = otp
         request.session['user_data'] = {
-            'username': username,
-            'password': password,
-            'email': email,
-            'first_name': first_name,
-            'last_name': last_name
+            'username': form_data['username'],
+            'password': form_data['password'],
+            'email': form_data['email'],
+            'first_name': form_data['first_name'],
+            'last_name': form_data['last_name']
         }
 
         # Send OTP via email
         subject = 'Your OTP for Meat Souk'
-        message = f'Hello {first_name},\nYour OTP for verifying your account is: {otp}'
+        message = f'Hello {form_data["first_name"]},\nYour OTP for verifying your account is: {otp}'
         email_from = settings.EMAIL_HOST_USER
-        recipient_list = [email]
+        recipient_list = [form_data['email']]
 
         try:
             send_mail(subject, message, email_from, recipient_list)
@@ -101,6 +104,10 @@ def verify_otp(request):
         if user_data is None:
             error_message = 'Session expired or no user data found. Please try again.'
             return render(request, 'user/otp_verification.html', {'error_message': error_message})
+        
+        if not session_otp:
+            error_message = 'OTP expired. Please request a new one.'
+            return render(request, 'user/otp_verification.html', {'error_message': error_message})
 
         if str(user_otp) == str(session_otp):
             User = get_user_model()
@@ -111,7 +118,7 @@ def verify_otp(request):
                 first_name=user_data['first_name'],
                 last_name=user_data['last_name']
             )
-            user.backend = 'django.contrib.auth.backends.ModelBackend'  # Set the backend
+            user.backend = 'django.contrib.auth.backends.ModelBackend'
             login(request, user)  # Now, login works with specified backend
 
             del request.session['otp']
@@ -124,25 +131,34 @@ def verify_otp(request):
     return render(request, 'user/otp_verification.html')
 
 def resend_otp(request):
-    user_data = request.session.get('user_data')
-    if not user_data:
-        return redirect('signup')
+    if request.method == 'POST':
+        user_data = request.session.get('user_data')
+        if not user_data:
+            return JsonResponse({'success': False, 'error': 'Session expired. Please restart signup process.'})
 
-    otp = generate_otp()
-    request.session['otp'] = otp
+        try:
+            otp = generate_otp()
+            request.session['otp'] = otp
 
-    subject = 'Your New OTP for Meat Souk'
-    message = f'Hello {user_data["first_name"]},\nYour new OTP for verifying your account is: {otp}'
-    email_from = settings.EMAIL_HOST_USER
-    recipient_list = [user_data['email']]
+            subject = 'Your New OTP for Meat Souk'
+            message = f'Hello {user_data["first_name"]},\nYour new OTP for verifying your account is: {otp}'
+            email_from = settings.EMAIL_HOST_USER
+            recipient_list = [user_data['email']]
 
-    try:
-        send_mail(subject, message, email_from, recipient_list)
-        message = 'A new OTP has been sent to your email.'
-        return render(request, 'user/otp_verification.html', {'message': message})
-    except Exception:
-        error_message = 'Error resending OTP. Please try again later.'
-        return render(request, 'user/otp_verification.html', {'error_message': error_message})
+            send_mail(subject, message, email_from, recipient_list)
+            
+            return JsonResponse({'success': True})
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': 'Error resending OTP. Please try again later.'})
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request method.'}, status=400)
+    
+def invalidate_otp(request):
+    if request.method == 'POST':
+        if 'otp' in request.session:
+            del request.session['otp']  # Remove OTP from session
+        return JsonResponse({'message': 'OTP invalidated successfully.'})
+    return JsonResponse({'error': 'Invalid request method.'}, status=400)
 
 @login_required(login_url='login')
 @never_cache

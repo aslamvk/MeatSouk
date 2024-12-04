@@ -6,22 +6,36 @@
   <title>MeatSouk - Admin Login</title>
   {% load static %}
   <link rel="stylesheet" href="{% static 'css/admin_login.css' %}">
+  <style>
+    .error-message {
+      color: red;
+      font-size: 0.8em;
+      margin-top: 5px;
+    }
+  </style>
 </head>
 <body>
   <div class="login-container">
     <div class="login-box">
       <h1 class="logo">MeatSouk</h1>
       <h2>Welcome admin</h2>
+
       <form action="{% url 'admin_login' %}" method="post">
         {% csrf_token %}
         <div class="input-group">
           <input type="text" name="username" placeholder="username" required>
         </div>
+        {% if username_error %}
+            <div class="error-message">{{ username_error }}</div>
+        {% endif %}
         <div class="input-group">
           <input type="password" name="password" id="password" placeholder="Password" required>
           <span class="toggle-password" onclick="togglePasswordVisibility()">
             👁️
           </span>
+          {% if password_error %}
+            <div class="error-message">{{ password_error }}</div>
+          {% endif %}
         </div>
         <a href="#" class="forgot-password">Forgot password?</a>
         <button type="submit" class="login-btn">Sign in</button>

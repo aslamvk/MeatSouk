@@ -12,7 +12,7 @@ def admin_pincode(request):
 
 from django.shortcuts import render, redirect
 from .models import Pincode
-import re  # Import regular expressions module
+import re
 
 @login_required(login_url='admin_login')
 @never_cache
@@ -30,12 +30,18 @@ def add_admin_pincode(request):
         # Validate required fields
         if not all([pincode, city, district, state]):
             error_message = 'All fields except "Is Listed?" are required.'
-        # Validate pincode: must be exactly 6 digits
+        # Validate pincode. here pincode must be exactly 6 digits
         elif not re.fullmatch(r'\d{6}', pincode):
             error_message = 'Pincode must be exactly 6 digits.'
+        # Validate city here city must be letters and at least 3 characters
+        elif not re.fullmatch(r'[A-Za-z\s]{3,}', city):
+            error_message = 'City must contain only letters and be at least 3 characters long.'
+        elif not re.fullmatch(r'[A-Za-z\s]{3,}', district):
+            error_message = 'District must contain only letters and be at least 3 characters long.'
+        elif not re.fullmatch(r'[A-Za-z\s]{3,}', state):
+            error_message = 'State must contain only letters and be at least 3 characters long.'
         else:
             try:
-                # Create and save the new Pincode record
                 new_pincode = Pincode(
                     pincode=pincode,
                     city=city,
@@ -44,11 +50,10 @@ def add_admin_pincode(request):
                     is_listed=is_listed
                 )
                 new_pincode.save()
-                return redirect('admin_pincode')  # Redirect on successful save
+                return redirect('admin_pincode')
             except Exception as e:
                 error_message = f'Error saving pincode: {e}'
 
-    # Pass error_message to the template
     return render(request, 'admin_pincode_add.html', {'error_message': error_message})
 
 

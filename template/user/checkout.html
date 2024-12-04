@@ -106,7 +106,7 @@
                             
                             <div class="form-group">
                                 <label for="coupon-code">Coupon Code</label>
-                                <input type="text" id="coupon-code" name="coupon_code" class="form-control text-left px-3" placeholder="Enter coupon code">
+                                <input type="text" id="coupon-code" name="coupon_code" class="form-control text-left px-3" placeholder="Enter coupon code" value="{{ request.session.coupon_code|default_if_none:'' }}"{% if request.session.coupon_code %}readonly{% endif %}>
                 <span class="input-group-text bg-white border-0" >
                             <a href="#" data-bs-toggle="modal" data-bs-target="#couponsModal" class="text-decoration-none" >see available coupons</a>
                         </span>            </div>

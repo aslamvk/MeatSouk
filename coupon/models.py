@@ -6,7 +6,7 @@ from django.utils import timezone
 
 class Coupon(models.Model):
     code = models.CharField(max_length=100, unique=True)
-    discount_value = models.DecimalField(max_digits=10, decimal_places=2)
+    discount_value = models.DecimalField(max_digits=10, decimal_places=2, null=True)
     minimum_purchase_amount = models.DecimalField(max_digits=10, decimal_places=2)
     valid_from = models.DateField()
     valid_upto = models.DateField()

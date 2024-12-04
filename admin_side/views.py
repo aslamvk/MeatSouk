@@ -17,18 +17,44 @@ from django.db.models.functions import Coalesce
 # Create your views here.
 @never_cache
 def admin_login(request):
+    # Clear previous context
+    context = {
+        'username_error': None,
+        'password_error': None
+    }
+    
     if request.user.is_authenticated and request.user.is_superuser:
         return redirect('admin_page')
+    
     if request.method == 'POST':
-        username = request.POST['username']
-        password = request.POST['password']
-        user = authenticate(username=username, password=password)
-        if user is not None and user.is_superuser:  
-            login(request, user)
-            return redirect('admin_page')
-        else:
-            messages.error(request, 'Invalid details or you are not an admin.')
-    return render(request, 'admin_login.html')
+        username = request.POST.get('username', '').strip()
+        password = request.POST.get('password', '')
+        
+        try:
+            # First, check if user exists
+            user = User.objects.get(username=username)
+            
+            # Check if the user is a superuser
+            if not user.is_superuser:
+                context['username_error'] = 'Access denied. Not an admin user.'
+            else:
+                # Authenticate the user
+                auth_user = authenticate(username=username, password=password)
+                
+                if auth_user is not None:  
+                    login(request, auth_user)
+                    return redirect('admin_page')
+                else:
+                    # If authentication fails, it means wrong password
+                    context['password_error'] = 'Incorrect password. Please try again.'
+        
+        except User.DoesNotExist:
+            # If user does not exist, show username error
+            context['username_error'] = 'User does not exist. Please check the username.'
+    
+    # Add the username back to the form if login failed
+    context['request'] = request
+    return render(request, 'admin_login.html', context)
 
 
 @login_required(login_url='admin_login')
@@ -116,7 +142,7 @@ def get_sales_data(request):
         trunc_func = TruncDay
         date_format = '%Y-%m-%d'
     elif time_range == 'week':
-        days_ago = 90
+        days_ago = 30
         trunc_func = TruncWeek
         date_format = '%Y-%W'
     elif time_range == 'month':

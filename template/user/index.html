@@ -16,18 +16,20 @@
             <div class="input-group">
                 <div class="form-field">
                     <label for="first-name">First name</label>
-                    <input type="text" name="first-name" id="first-name" placeholder="Enter Your Name" required>
+                    <input type="text" name="first-name" id="first-name" placeholder="Enter Your Name" value="{{ form_data.first_name|default:'' }}" required>
+                    {% if errors.first_name %}<p class="error-message">{{ errors.first_name }}</p>{% endif %}
                 </div>
                 <div class="form-field">
                     <label for="last-name">Last name</label>
-                    <input type="text" name="last-name" id="last-name" placeholder="Enter Your Name" required>
+                    <input type="text" name="last-name" id="last-name" placeholder="Enter Your Name" value="{{ form_data.last_name|default:'' }}" required>
+                    {% if errors.last_name %}<p class="error-message">{{ errors.last_name }}</p>{% endif %}
                 </div>
             </div>
 
             <div class="input-group">
                 <div class="form-field">
                     <label for="email">Email</label>
-                    <input type="email" name="email" id="email" placeholder="Enter Your Email" required>
+                    <input type="email" name="email" id="email" placeholder="Enter Your Email" value="{{ form_data.email|default:'' }}" required>
                     {% if errors.email_exists %}
                         <p class="error-message">{{ errors.email_exists }}</p>
                     {% endif %}
@@ -37,21 +39,19 @@
             <div class="input-group">
                 <div class="form-field">
                     <label for="username">Username</label>
-                    <input type="text" name="username" id="username" placeholder="Enter Your username" required>
-                    {% if errors.username_exists %}
-                        <p class="error-message">{{ errors.username_exists }}</p>
-                    {% endif %}
+                    <input type="text" name="username" id="username" placeholder="Enter Your username" value="{{ form_data.username|default:'' }}" required>
+                    {% if errors.username %}<p class="error-message">{{ errors.username }}</p>{% endif %}
                 </div>
                 <div class="form-field password-wrapper">
                     <label for="password">Password</label>
-                    <input type="password" name="password" id="password" placeholder="Enter Your Password" required>
+                    <input type="password" name="password" id="password" placeholder="Enter Your Password" value="{{ form_data.password|default:'' }}" required>
                     <span class="toggle-password" onclick="togglePassword('password')">👁</span>
                 </div>
             </div>
 
             <div class="form-field full-width password-wrapper">
                 <label for="re-enter-password">Re-enter password</label>
-                <input type="password" name="re-enter-password" id="re-enter-password" placeholder="Re-enter password" required>
+                <input type="password" name="re-enter-password" id="re-enter-password" placeholder="Re-enter password" value="{{ form_data.re_password|default:'' }}" required>
                 <span class="toggle-password" onclick="togglePassword('re-enter-password')">👁</span>
                 {% if errors.password_mismatch %}
                     <p class="error-message">{{ errors.password_mismatch }}</p>

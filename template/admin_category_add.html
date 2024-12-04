@@ -48,7 +48,7 @@
 
                 <!-- Display messages for feedback -->
                 {% if messages %}
-                    <div class="container mt-3">
+                    <div class="message-container">
                         {% for message in messages %}
                             <div class="alert {% if message.tags %}alert-{{ message.tags }}{% else %}alert-info{% endif %} alert-dismissible fade show" role="alert">
                                 {{ message }}
@@ -68,11 +68,6 @@
                     <div class="input-group">
                         <label for="category-name">Category Name</label>
                         <input type="text" id="category-name" name="category_name" placeholder="Enter category name" value="{{ request.POST.category_name }}">
-                    </div>
-
-                    <div class="input-group">
-                        <label for="category-image">Category Image</label>
-                        <input type="file" id="category-image" name="category_image">
                     </div>
 
                     <div class="input-group">
@@ -98,5 +93,8 @@
             </section>
         </main>
     </div>
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 </body>
 </html>

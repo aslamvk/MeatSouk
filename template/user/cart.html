@@ -21,42 +21,52 @@
                             </tr>
                         </thead>
                         <tbody>
-                            {% for item in items %}
-                            <tr class="text-center align-middle">
-                                <td class="product-remove">
-                                    <a href="#" data-product-id="{{ item.products.id }}">
-                                        <span class="ion-ios-close"></span>
-                                    </a>
-                                </td>
-                                <td class="image-prod">
-                                    <div class="img" style="background-image:url({{ item.products.image1.url }});"></div>
-                                </td>
-                                <td class="product-name">
-                                    <h3>{{ item.products.product_name }}</h3>
-                                </td>
-                                <td class="price">₹{{ item.products.price }}</td>
+                            {% for cart_item in items %}
+							<tr class="text-center align-middle">
+								<td class="product-remove">
+									<a href="#" data-product-id="{{ cart_item.item.products.id }}">
+										<span class="ion-ios-close"></span>
+									</a>
+								</td>
+								<td class="image-prod">
+									<div class="img" style="background-image:url({{ cart_item.item.products.image1.url }});"></div>
+								</td>
+								<td class="product-name">
+									<h3>{{ cart_item.item.products.product_name }}</h3>
+								</td>
+								<td class="price">
+									{% if cart_item.discounted_price < cart_item.item.products.price %}
+									<span class="original-price text-muted">
+										<s>₹{{ cart_item.item.products.price|floatformat:2 }}</s>
+									</span>
+									<br>
+									<span class="discounted-price">₹{{ cart_item.discounted_price|floatformat:2 }}</span>
+									{% else %}
+									<span class="price">₹{{ cart_item.item.products.price|floatformat:2 }}</span>
+									{% endif %}
+								</td>
                                 <td class="quantity">
 									<div class="quantity-controls">
-										<button class="btn btn-outline-secondary btn-minus" data-product-id="{{ item.products.id }}" data-unit="{{ item.products.product_unit }}">-</button>
+										<button class="btn btn-outline-secondary btn-minus" data-product-id="{{ cart_item.item.products.id }}" data-unit="{{ cart_item.item.products.product_unit }}">-</button>
 										<span class="quantity-value">
-											{% if item.products.product_unit == 'piece' %}
-												{{ item.quantity|floatformat:"0" }}
+											{% if cart_item.item.products.product_unit == 'piece' %}
+												{{ cart_item.item.quantity|floatformat:"0" }}
 											{% else %}
-												{{ item.quantity|floatformat:"1" }}
+												{{ cart_item.item.quantity|floatformat:"1" }}
 											{% endif %}
-										</span> {{ item.products.product_unit }}
-										<button class="btn btn-outline-secondary btn-plus" data-product-id="{{ item.products.id }}" data-unit="{{ item.products.product_unit }}">+</button>
+										</span> {{ cart_item.item.products.product_unit }}
+										<button class="btn btn-outline-secondary btn-plus" data-product-id="{{ cart_item.item.products.id }}" data-unit="{{ cart_item.item.products.product_unit }}">+</button>
 									</div>
-									<span class="stock-available text-muted">Available: {{ item.products.stock }} {{ item.products.product_unit }}</span>
+									<span class="stock-available text-muted">Available: {{ cart_item.item.products.stock }} {{ cart_item.item.products.product_unit }}</span>
 									<span class="error-msg text-danger" style="display: none;">Quantity exceeds available stock</span>
 								</td>
-                                <td class="total">₹{{ item.products.price|floatformat:2 }}</td>
-                            </tr>
-                            {% empty %}
-                            <tr class="text-center">
-                                <td colspan="6">Your cart is empty</td>
-                            </tr>
-                            {% endfor %}
+                                <td class="total">₹{{ cart_item.total_price|floatformat:2 }}</td>
+							</tr>
+							{% empty %}
+							<tr class="text-center">
+								<td colspan="6">Your cart is empty</td>
+							</tr>
+							{% endfor %}
                         </tbody>
                     </table>
                 </div>
@@ -167,10 +177,12 @@
 				const quantitySpan = this.closest('.quantity-controls').querySelector('.quantity-value');
 				const stockSpan = this.closest('td').querySelector('.stock-available');
 				const errorSpan = this.closest('td').querySelector('.error-msg');
-				let quantity = parseFloat(quantitySpan.textContent);
-				let stock = parseFloat(stockSpan.textContent.split(' ')[1]); // Extract number from "Available: X kg/piece"
+				const priceSpan = this.closest('tr').querySelector('.price .discounted-price') || this.closest('tr').querySelector('.price');
 				
-				// Determine increment based on unit type
+				let quantity = parseFloat(quantitySpan.textContent);
+				let stock = parseFloat(stockSpan.textContent.split(' ')[1]); 
+				let price = parseFloat(priceSpan.textContent.replace('₹', ''));
+				
 				const increment = unit === 'kg' ? 0.5 : 1;
 				
 				if (this.classList.contains('btn-plus')) {
@@ -179,14 +191,24 @@
 						errorSpan.style.display = 'none';
 					} else {
 						errorSpan.style.display = 'block';
+						return;
 					}
-				} else if (quantity > increment) { // Use increment as minimum quantity
-					quantity -= increment;
-					errorSpan.style.display = 'none';
+				} else if (this.classList.contains('btn-minus')) {
+					if (quantity > increment) {
+						quantity -= increment;
+						errorSpan.style.display = 'none';
+					} else {
+						return;
+					}
 				}
 		
 				// Format quantity based on unit type
 				quantitySpan.textContent = unit === 'kg' ? quantity.toFixed(1) : quantity.toFixed(0);
+		
+				// Recalculate total for this item
+				const totalSpan = this.closest('tr').querySelector('.total');
+				const total = (price * quantity).toFixed(2);
+				totalSpan.textContent = '₹' + total;
 		
 				calculateCartTotals();
 				updateCheckoutButton();
@@ -218,6 +240,37 @@
 				});
 			});
 		});
+		
+		// Modify calculateCartTotals function
+		function calculateCartTotals() {
+			let subtotal = 0;
+		
+			// Loop through each row to calculate individual product totals
+			document.querySelectorAll('.table tbody tr').forEach(function(row) {
+				const quantitySpan = row.querySelector('.quantity-value');
+				const priceSpan = row.querySelector('.discounted-price') || row.querySelector('.price');
+				const totalSpan = row.querySelector('.total');
+		
+				if (quantitySpan && priceSpan && totalSpan) {
+					const quantity = parseFloat(quantitySpan.textContent);
+					const price = parseFloat(priceSpan.textContent.replace('₹', '').replace(',', ''));
+					const total = price * quantity;
+		
+					// Update the total cell
+					totalSpan.textContent = '₹' + total.toFixed(2);
+					subtotal += total;
+				}
+			});
+		
+			// Calculate delivery charge
+			const deliveryCharge = subtotal > 500 ? 0 : 40;
+			const total = subtotal + deliveryCharge;
+		
+			// Update the subtotal and total in the cart summary
+			document.getElementById('subtotal').textContent = '₹' + subtotal.toFixed(2);
+			document.getElementById('delivery').textContent = '₹' + deliveryCharge.toFixed(2);
+			document.getElementById('total').textContent = '₹' + total.toFixed(2);
+		}
 	
 		// Remove product event
 		document.querySelectorAll('.product-remove a').forEach(button => {

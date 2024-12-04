@@ -15,10 +15,8 @@ from decimal import Decimal
 @login_required(login_url='admin_login')
 @never_cache
 def admin_product_view(request):
-    # Fetch the search query from the request
     search_query = request.GET.get('search_query', '')
 
-    # If there is a search query, filter the products accordingly
     if search_query:
         products = Products.objects.filter(
             Q(id__icontains=search_query) |
@@ -26,7 +24,7 @@ def admin_product_view(request):
             Q(category__category_name__icontains=search_query)
         )
     else:
-        products = Products.objects.all()  # Retrieve all products when no search query is provided
+        products = Products.objects.all()
         
 
     return render(request, 'admin_product_view.html', {'products': products})
@@ -73,10 +71,11 @@ def admin_product_add(request):
                 elif product_unit == 'piece':
                     try:
                         stock_decimal = Decimal(stock)
-                        if not stock_decimal.as_tuple().exponent >= 0:
-                            error_message = "Stock must be a whole number for piece units"
+                        if stock_decimal % 1 != 0:
+                            error_message = "Stock must be a whole number for piece units (no fractions allowed)"
                         elif stock_decimal <= Decimal('0'):
                             error_message = "Stock must be greater than zero."
+                        stock_decimal = int(stock_decimal)
                     except (ValueError, TypeError):
                         error_message = "Stock must be a whole number for piece units"
                 
@@ -165,26 +164,21 @@ def admin_product_edit(request, product_id):
             try:
                 if product_unit == 'piece':
                     try:
-                        if Decimal(str(stock)) != product.stock:
-                            stock_decimal = Decimal(stock)
-                            if not stock_decimal.as_tuple().exponent >= 0:
-                                error_message = "Stock must be a whole number for piece units"
-                            elif stock_decimal <= Decimal('0'):
-                                error_message = "Stock must be greater than zero."
-                        else:
-                            stock_decimal = product.stock
+                        stock_decimal = Decimal(stock)
+                        if stock_decimal % 1 != 0:
+                            error_message = "Stock must be a whole number for piece units (no fractions allowed)"
+                        elif stock_decimal <= Decimal('0'):
+                            error_message = "Stock must be greater than zero."
+                        stock_decimal = int(stock_decimal)
                     except (ValueError, TypeError):
                         error_message = "Stock must be a whole number for piece units"
                 elif product_unit == 'kg':
                     try:
-                        if Decimal(str(stock)) != product.stock:
-                            stock_decimal = Decimal(stock)
-                            if stock_decimal <= Decimal('0'):
-                                error_message = "Stock must be greater than zero."
-                            elif stock_decimal < Decimal('0.01'):
-                                error_message = "Minimum stock for kg products should be 0.01 kg"
-                        else:
-                            stock_decimal = product.stock
+                        stock_decimal = Decimal(stock)
+                        if stock_decimal <= Decimal('0'):
+                            error_message = "Stock must be greater than zero."
+                        elif stock_decimal < Decimal('0.01'):
+                            error_message = "Minimum stock for kg products should be 0.01 kg"
                     except (ValueError, TypeError):
                         error_message = "Invalid stock value for kg unit"
 
@@ -238,11 +232,8 @@ def admin_product_edit(request, product_id):
 @never_cache
 def shop(request):
     categories = Category.objects.filter(is_listed=True)
-    
     selected_category = request.GET.get('category', 'All')
-
     search_query = request.GET.get('query', None)
-
     sort_option = request.GET.get('sort', None)
 
     if selected_category == 'All':
@@ -294,29 +285,25 @@ def shop(request):
             category=product.category, valid_from__lte=now, valid_to__gte=now
         ).first()
 
-        product_discount = (
-            (product_offer.offer_discount / product.price) * 100 if product_offer else 0
-        )
-        category_discount = (
-            (category_offer.offer_discount / product.price) * 100 if category_offer else 0
-        )
+        product_discount_percentage = product_offer.offer_percentage if product_offer else 0
+        category_discount_percentage = category_offer.offer_percentage if category_offer else 0
 
         best_offer = None
         final_price = product.price
         discount_percentage = 0
-        if product_discount > category_discount:
+        if product_discount_percentage > category_discount_percentage:
             best_offer = product_offer
-            final_price = product.price - product_offer.offer_discount
-            discount_percentage = product_discount
-        elif category_discount > 0:
+            discount_percentage = product_discount_percentage
+        elif category_discount_percentage > 0:
             best_offer = category_offer
-            final_price = product.price - category_offer.offer_discount
-            discount_percentage = category_discount
+            discount_percentage = category_discount_percentage
+
+        final_price -= (final_price * discount_percentage / 100)
 
         products_with_offers.append({
             'product': product,
             'best_offer': best_offer,
-            'final_price': final_price,
+            'final_price': round(final_price, 2),
             'discount_percentage': round(discount_percentage, 2),
         })
 
@@ -345,33 +332,32 @@ def product_details(request,product_id):
     category_offer = Category_Offers.objects.filter(
         category=product.category, valid_from__lte=now, valid_to__gte=now
     ).first()
-    product_discount = (
-        (product_offer.offer_discount / product.price) * 100 if product_offer else 0
-    )
-    category_discount = (
-        (category_offer.offer_discount / product.price) * 100 if category_offer else 0
-    )
+    product_discount = product_offer.offer_percentage if product_offer else 0
+    category_discount = category_offer.offer_percentage if category_offer else 0
 
     best_offer = None
     final_price = product.price
     discount_percentage = 0
+
     if product_discount > category_discount:
         best_offer = product_offer
-        final_price = product.price - product_offer.offer_discount
+        discount_amount = (product.price * product_discount) / 100
+        final_price = product.price - discount_amount
         discount_percentage = product_discount
     elif category_discount > 0:
         best_offer = category_offer
-        final_price = product.price - category_offer.offer_discount
+        discount_amount = (product.price * category_discount) / 100
+        final_price = product.price - discount_amount
         discount_percentage = category_discount
 
     context = {
         'product': product,
         'best_offer': best_offer,
-        'final_price': final_price,
+        'final_price': round(final_price, 2),
         'username': username,
         'discount_percentage': round(discount_percentage, 2),
     }
-    return render(request,'user/product-single.html', context)
+    return render(request, 'user/product-single.html', context)
 
 def unlist_product(request, product_id):
     user = Products.objects.get(id=product_id)

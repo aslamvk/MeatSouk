@@ -68,19 +68,6 @@
                         <input type="text" id="category-name" name="category_name" value="{{ category.category_name }}" placeholder="Enter category name" required>
                     </div>
 
-                    <div class="input-group">
-                        <label for="category-unit">Category Unit</label>
-                        <input type="text" id="category-unit" name="category_unit" value="{{ category.category_unit }}" placeholder="Enter category unit (e.g., kg, pcs)" required>
-                    </div>
-
-                    <div class="input-group">
-                        <label for="category-image">Category Image</label>
-                        <input type="file" id="category-image" name="category_image" accept="image/*">
-                        {% if category.category_image %}
-                            <img src="{{ category.category_image.url }}" alt="Category Image" style="width:100px; height:auto;">
-                        {% endif %}
-                    </div>
-
                     <button type="submit">Edit Now</button>
                 </form>
             </section>

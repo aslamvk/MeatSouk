@@ -80,8 +80,8 @@
                         </select>
                     </div>
                     <div class="form-group">
-                        <label for="offer_discount">Offer Price</label>
-                        <input type="number" step="0.01" class="form-control" id="offer_discount" name="offer_discount" max="9999999999" value="{{ category_offer.offer_discount }}" required>
+                      <label for="offer_percentage">Offer Percentage (Max 80%)</label>
+                      <input type="number" id="offer_percentage" name="offer_percentage" step="0.01" max="80" required>
                     </div>
                     <div class="form-group">
                         <label for="valid_from">Valid From</label>

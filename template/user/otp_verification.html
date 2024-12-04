@@ -6,57 +6,6 @@
     <title>Meat Souk - OTP Verification</title>
     {% load static %}
     <link rel="stylesheet" href="{% static 'css/otp_verification.css' %}">
-
-    <script>
-        let timer = 60; // 1 minutes in seconds
-
-        function startTimer() {
-            const timerElement = document.getElementById('timer');
-            const resendButton = document.getElementById('resend-otp');
-
-            const countdown = setInterval(() => {
-                const minutes = Math.floor(timer / 60);
-                const seconds = timer % 60;
-
-                timerElement.textContent = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
-                timer--;
-
-                if (timer < 0) {
-                    clearInterval(countdown);
-                    timerElement.textContent = "OTP expired.";
-                    resendButton.disabled = false; // Enable the resend button
-                }
-            }, 1000);
-        }
-
-        // Resend OTP function
-        function resendOTP() {
-            timer = 300; // Reset timer to 5 minutes
-            document.getElementById('resend-otp').disabled = true;
-            startTimer(); // Restart the timer
-
-            // Send an AJAX request to resend OTP
-            fetch("{% url 'resend_otp' %}", { 
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': '{{ csrf_token }}',
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ email: '{{ user.email }}' })  // Adjust if needed
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.message) {
-                    alert(data.message);
-                } else if (data.error) {
-                    alert(data.error);
-                }
-            })
-            .catch(error => console.error('Error:', error));
-        }
-
-        window.onload = startTimer;
-    </script>
 </head>
 <body>
     <div class="container">
@@ -64,7 +13,7 @@
             <h1>Meat Souk</h1>
             <div class="otp-container">
                 <h2>Enter OTP</h2>
-                <p>We have sent an OTP to your email, valid for the next 5 minutes.</p>
+                <p>We have sent an OTP to your email, valid for the next 1 minutes.</p>
                 <div id="timer" style="font-weight: bold; color: red;"></div>
 
                 <!-- Display success or error message if it exists -->
@@ -76,15 +25,12 @@
                 {% endif %}
 
                 <div class="otp-input">
-                    <form action="{% url 'verify_otp' %}" method="POST">
+                    <form id="otpForm" action="{% url 'verify_otp' %}" method="POST">
                         {% csrf_token %}
                         <input type="text" name="otp" placeholder="Enter OTP" required>
-                        <button type="submit">Verify</button>
+                        <button id="submitButton" type="submit">Verify</button>
                     </form>
                 </div>
-
-                <!-- Resend OTP Button -->
-                <button id="resend-otp" class="btn" onclick="resendOTP()" disabled>Resend OTP</button>
 
                 <div class="back-link">
                     <a href="{% url 'signup' %}">&larr; Back to Sign-up</a>
@@ -92,5 +38,89 @@
             </div>
         </div>
     </div>
+    <script>
+        let timer = 60; // Timer duration in seconds
+        const timerElement = document.getElementById('timer');
+        const submitButton = document.getElementById('submitButton');
+        const otpForm = document.getElementById('otpForm');
+        let countdownInterval;
+
+        function startTimer() {
+            // Clear any existing interval
+            if (countdownInterval) {
+                clearInterval(countdownInterval);
+            }
+
+            // Reset button to verify state
+            submitButton.textContent = 'Verify';
+            submitButton.onclick = null;
+            otpForm.action = "{% url 'verify_otp' %}";
+            otpForm.method = "POST";
+
+            timer = 60; // Reset timer
+            
+            countdownInterval = setInterval(() => {
+                if (timer <= 0) {
+                    clearInterval(countdownInterval);
+                    timerElement.textContent = "OTP expired.";
+                    
+                    // Change button to Resend
+                    submitButton.textContent = 'Resend OTP';
+                    submitButton.onclick = resendOTP;
+                    otpForm.action = "#";
+                    otpForm.method = "button";
+
+                    // Invalidate OTP on the backend
+                    fetch("{% url 'invalidate_otp' %}", {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': '{{ csrf_token }}',
+                            'Content-Type': 'application/json'
+                        }
+                    }).catch(error => console.error('Error invalidating OTP:', error));
+
+                    return;
+                }
+
+                const minutes = Math.floor(timer / 60);
+                const seconds = timer % 60;
+                timerElement.textContent = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+                timer--;
+            }, 1000);
+        }
+
+        function resendOTP() {
+            submitButton.disabled = true; // Disable the button to prevent spam clicks
+        
+            fetch("{% url 'resend_otp' %}", {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert("A new OTP has been sent to your email.");
+                    startTimer(); // Restart the timer
+                } else {
+                    alert(data.error || "An error occurred. Please try again.");
+                }
+                submitButton.disabled = false;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert("An error occurred. Please try again.");
+                submitButton.disabled = false;
+            });
+        }
+
+        // Conditionally start the timer only if the server indicates it has not expired
+        const timerExpired = {{ timer_expired|default:"false" }};
+        if (!timerExpired) {
+            window.onload = startTimer;
+        }
+    </script>
 </body>
 </html>
