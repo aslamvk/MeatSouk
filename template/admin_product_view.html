@@ -16,12 +16,12 @@
                 <li><a href="{% url 'admin_page' %}">Dashboard</a></li>
                 <li><a href="{% url 'user_page' %}">Users</a></li>
                 <li><a href="{% url 'admin_category' %}">Category</a></li>
-                <li><a href="#">Products</a></li>
+                <li><a href="{% url 'admin_product_view' %}">Products</a></li>
                 <li><a href="{% url 'admin_order_list' %}">Orders</a></li>
                 <li><a href="{% url 'coupon' %}">Coupons</a></li>
                 <li><a href="{% url 'admin_offer_management' %}">Offer</a></li>
                 <li><a href="{% url 'admin_pincode' %}">Pin code</a></li>
-                <li><a href="#">Sales reprot</a></li>
+                <li><a href="{% url 'sales_report' %}">Sales reprot</a></li>
             </ul>
         </nav>
 
@@ -40,7 +40,7 @@
                         <a href="{% url 'admin_logout' %}">LOGOUT</a>
                     </div>
                     <div class="user-image">
-                        <img src="user.jpg" alt="User">
+                        <img src="{% static 'images/Ms_logo.jpg' %}" alt="User">
                     </div>
                 </div>
             </header>
@@ -100,6 +100,46 @@
                         {% endfor %}
                     </tbody>
                 </table>
+                <div class="pagination-section">
+                    <div class="pagination">
+                        <ul>
+                            {% if products.has_previous %}
+                                <!-- First page -->
+                                <li>
+                                    <a href="?page=1{% if search_query %}&search_query={{ search_query }}{% endif %}">&laquo; First</a>
+                                </li>
+                                <!-- Previous page -->
+                                <li>
+                                    <a href="?page={{ products.previous_page_number }}{% if search_query %}&search_query={{ search_query }}{% endif %}">Previous</a>
+                                </li>
+                            {% endif %}
+                
+                            <!-- Page numbers -->
+                            {% for page_num in products.paginator.page_range %}
+                                {% if page_num == products.number %}
+                                    <li class="active">
+                                        <span>{{ page_num }}</span>
+                                    </li>
+                                {% else %}
+                                    <li>
+                                        <a href="?page={{ page_num }}{% if search_query %}&search_query={{ search_query }}{% endif %}">{{ page_num }}</a>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+                
+                            {% if products.has_next %}
+                                <!-- Next page -->
+                                <li>
+                                    <a href="?page={{ products.next_page_number }}{% if search_query %}&search_query={{ search_query }}{% endif %}">Next</a>
+                                </li>
+                                <!-- Last page -->
+                                <li>
+                                    <a href="?page={{ products.paginator.num_pages }}{% if search_query %}&search_query={{ search_query }}{% endif %}">Last &raquo;</a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                </div>
             </section>
         </main>
     </div>

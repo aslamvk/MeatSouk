@@ -53,11 +53,24 @@
                 <label for="re-enter-password">Re-enter password</label>
                 <input type="password" name="re-enter-password" id="re-enter-password" placeholder="Re-enter password" value="{{ form_data.re_password|default:'' }}" required>
                 <span class="toggle-password" onclick="togglePassword('re-enter-password')">👁</span>
+            
                 {% if errors.password_mismatch %}
                     <p class="error-message">{{ errors.password_mismatch }}</p>
                 {% endif %}
                 {% if errors.password_length %}
                     <p class="error-message">{{ errors.password_length }}</p>
+                {% endif %}
+                {% if errors.password_uppercase %}
+                    <p class="error-message">{{ errors.password_uppercase }}</p>
+                {% endif %}
+                {% if errors.password_lowercase %}
+                    <p class="error-message">{{ errors.password_lowercase }}</p>
+                {% endif %}
+                {% if errors.password_number %}
+                    <p class="error-message">{{ errors.password_number }}</p>
+                {% endif %}
+                {% if errors.password_special %}
+                    <p class="error-message">{{ errors.password_special }}</p>
                 {% endif %}
             </div>
 

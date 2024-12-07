@@ -74,45 +74,56 @@
         </div>
         <div class="row justify-content-end">
             <div class="col-lg-4 mt-5 cart-wrap ftco-animate">
-                <div class="cart-total mb-3">
-                    <h3>Cart Totals</h3>
-                    {% if items|length > 0 %}
-                    <p class="d-flex">
-                        <span>Subtotal</span>
-                        <span id="subtotal">₹{{ subtotal }}</span>
-                    </p>
-                    <p class="d-flex">
-                        <span>Delivery</span>
-                        <span id="delivery">₹{{ delivery_charge }}</span>
-                    </p>
-                    <hr>
-                    <p class="d-flex total-price">
-                        <span>Total</span>
-                        <span id="total">₹{{ total }}</span>
-                    </p>
-                    {% else %}
-                    <p class="d-flex">
-                        <span>Subtotal</span>
-                        <span id="subtotal">₹0.00</span>
-                    </p>
-                    <p class="d-flex">
-                        <span>Delivery</span>
-                        <span id="delivery">₹0.00</span>
-                    </p>
-                    <hr>
-                    <p class="d-flex total-price">
-                        <span>Total</span>
-                        <span id="total">₹0.00</span>
-                    </p>
-                    {% endif %}
-                </div>
-                <p>
+                {% if items %}
+				<div class="cart-total mb-3">
+					<h3>Cart Totals</h3>
+					<p class="d-flex">
+						<span>Subtotal</span>
+						<span id="subtotal">₹{{ subtotal }}</span>
+					</p>
+					<p class="d-flex">
+						<span>Delivery</span>
+						<span id="delivery">₹{{ delivery_charge }}</span>
+					</p>
+					<hr>
+					<p class="d-flex total-price">
+						<span>Total</span>
+						<span id="total">₹{{ total }}</span>
+					</p>
+				</div>
+				<p>
 					<a href="{% url 'checkout' %}" 
-					   class="btn btn-primary py-3 px-4 {% if not items %}disabled{% endif %}" 
-					   id="checkout-btn">
-					   Proceed to Checkout
+					class="btn btn-primary py-3 px-4 {% if not items %}disabled{% endif %}" 
+					id="checkout-btn">
+					Proceed to Checkout
 					</a>
 				</p>
+				{% else %}
+				<div class="cart-total mb-3">
+					<h3>Cart Totals</h3>
+					<p class="d-flex">
+						<span>Subtotal</span>
+						<span id="subtotal">₹0.00</span>
+					</p>
+					<p class="d-flex">
+						<span>Delivery</span>
+						<span id="delivery">₹0.00</span>
+					</p>
+					<hr>
+					<p class="d-flex total-price">
+						<span>Total</span>
+						<span id="total">₹0.00</span>
+					</p>
+				</div>
+				<p>
+					<a href="{% url 'checkout' %}" 
+					class="btn btn-primary py-3 px-4 disabled" 
+					id="checkout-btn" 
+					disabled>
+					Proceed to Checkout
+					</a>
+				</p>
+				{% endif %}
             </div>
         </div>
     </div>
@@ -127,21 +138,38 @@
 	
 		// Function to calculate cart totals
 		function calculateCartTotals() {
+			// Check if cart is actually empty
+			const cartRows = document.querySelectorAll('.table tbody tr');
+			const actualCartRows = Array.from(cartRows).filter(row => 
+				!row.textContent.trim().includes('Your cart is empty')
+			);
+	
+			// If no actual cart rows, reset everything to zero
+			if (actualCartRows.length === 0) {
+				document.getElementById('subtotal').textContent = '₹0.00';
+				document.getElementById('delivery').textContent = '₹0.00';
+				document.getElementById('total').textContent = '₹0.00';
+				updateCheckoutButton();
+				return;
+			}
+	
 			let subtotal = 0;
 	
 			// Loop through each row to calculate individual product totals
-			document.querySelectorAll('.table tbody tr').forEach(function(row) {
+			actualCartRows.forEach(function(row) {
 				const quantitySpan = row.querySelector('.quantity-value');
-				const priceSpan = row.querySelector('.price');
+				const priceSpan = row.querySelector('.discounted-price') || row.querySelector('.price');
 				const totalSpan = row.querySelector('.total');
 	
-				const quantity = parseFloat(quantitySpan.textContent);
-				const price = parseFloat(priceSpan.textContent.replace('₹', '').replace(',', ''));
-				const total = price * quantity; // Calculate the total for this product
+				if (quantitySpan && priceSpan && totalSpan) {
+					const quantity = parseFloat(quantitySpan.textContent);
+					const price = parseFloat(priceSpan.textContent.replace('₹', '').replace(',', ''));
+					const total = price * quantity; // Calculate the total for this product
 	
-				// Update the total cell
-				totalSpan.textContent = '₹' + total.toFixed(2);
-				subtotal += total; // Add to the subtotal
+					// Update the total cell
+					totalSpan.textContent = '₹' + total.toFixed(2);
+					subtotal += total; // Add to the subtotal
+				}
 			});
 	
 			// Calculate delivery charge
@@ -158,9 +186,13 @@
 		function updateCheckoutButton() {
 			const checkoutBtn = document.getElementById('checkout-btn');
 			const cartRows = document.querySelectorAll('.table tbody tr');
+			
+			// Explicitly check for non-empty cart rows
+			const actualCartRows = Array.from(cartRows).filter(row => 
+				!row.textContent.trim().includes('Your cart is empty')
+			);
 	
-			// Check if the cart is empty (no rows present)
-			if (cartRows.length > 0) {
+			if (actualCartRows.length > 0) {
 				checkoutBtn.classList.remove('disabled');
 				checkoutBtn.removeAttribute('disabled');
 			} else {
@@ -240,37 +272,6 @@
 				});
 			});
 		});
-		
-		// Modify calculateCartTotals function
-		function calculateCartTotals() {
-			let subtotal = 0;
-		
-			// Loop through each row to calculate individual product totals
-			document.querySelectorAll('.table tbody tr').forEach(function(row) {
-				const quantitySpan = row.querySelector('.quantity-value');
-				const priceSpan = row.querySelector('.discounted-price') || row.querySelector('.price');
-				const totalSpan = row.querySelector('.total');
-		
-				if (quantitySpan && priceSpan && totalSpan) {
-					const quantity = parseFloat(quantitySpan.textContent);
-					const price = parseFloat(priceSpan.textContent.replace('₹', '').replace(',', ''));
-					const total = price * quantity;
-		
-					// Update the total cell
-					totalSpan.textContent = '₹' + total.toFixed(2);
-					subtotal += total;
-				}
-			});
-		
-			// Calculate delivery charge
-			const deliveryCharge = subtotal > 500 ? 0 : 40;
-			const total = subtotal + deliveryCharge;
-		
-			// Update the subtotal and total in the cart summary
-			document.getElementById('subtotal').textContent = '₹' + subtotal.toFixed(2);
-			document.getElementById('delivery').textContent = '₹' + deliveryCharge.toFixed(2);
-			document.getElementById('total').textContent = '₹' + total.toFixed(2);
-		}
 	
 		// Remove product event
 		document.querySelectorAll('.product-remove a').forEach(button => {

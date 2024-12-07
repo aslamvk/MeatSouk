@@ -89,6 +89,7 @@
                     <th>Image</th>
                     <th>Item Name</th>
                     <th>Quantity</th>
+                    <th>Coupon Discount</th>
                     <th>Price</th>
                   </tr>
                 </thead>
@@ -97,6 +98,7 @@
                     <td><img src="{{ order_items.product.image1.url }}" alt="Item 1" class="img-fluid rounded-circle" style="width: 100px; height: 100px; object-fit: cover;"></td>
                     <td>{{order_items.product.product_name}}</td>
                     <td>{{order_items.quantity}} {{order_items.product.category.category_unit}}</td>
+                    <td>{{ item_coupon_discount|floatformat:2 }}</td>
                     <td>₹{{order_items.subtotal_price }}</td>
                   </tr>
                 </tbody>
@@ -105,27 +107,6 @@
               <h4 class="mt-4">Total Amount</h4>
               <p><strong>₹{{order_items.subtotal_price }}</strong></p>
 
-              {% if order_items.status == "Delivered" or order_items.status == "Reject Returned" %}
-                <h5 class="mt-4">Submit Your Review</h5>
-                <form action="" method="POST">
-                  <div class="form-group">
-                    <label for="rating">Rating:</label>
-                    <div class="review-stars" id="review-stars">
-                      <span class="star" data-value="1">&#9733;</span>
-                      <span class="star" data-value="2">&#9733;</span>
-                      <span class="star" data-value="3">&#9733;</span>
-                      <span class="star" data-value="4">&#9733;</span>
-                      <span class="star" data-value="5">&#9733;</span>
-                    </div>
-                    <input type="hidden" name="rating" id="rating" required>
-                  </div>
-                  <div class="form-group">
-                    <label for="review">Your Review:</label>
-                    <textarea name="review" id="review" class="form-control" rows="3" placeholder="Write your review here..." required></textarea>
-                  </div>
-                  <button type="submit" class="btn btn-primary">Submit Review</button>
-                </form>
-              {% endif %}
             </div>
           </div>
         </div>

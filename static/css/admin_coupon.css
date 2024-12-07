@@ -79,16 +79,29 @@ header {
 }
 
 .user-image img {
-    width: 40px;
-    height: 40px;
+    width: 70px;
+    height: 70px;
     border-radius: 50%;
     margin-left: 10px;
 }
 
-.logout-btn a {
-    color: #3498DB;
+.logout-btn {
+    background-color: red;
+    color: white;
+    padding: 7px 7px;
+    border-radius: 5px;
     text-decoration: none;
-    margin-right: 10px;
+    font-weight: bold;
+    transition: background-color 0.3s ease;
+}
+
+.logout-btn a {
+    text-decoration: none;
+    color: inherit;
+}
+
+.logout-btn:hover {
+    background-color: darkred;
 }
 
 .card {

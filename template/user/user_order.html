@@ -68,6 +68,32 @@
                             </tbody>
                         </table>
                     </div>
+                    <div class="row mt-4">
+                        <div class="col text-center">
+                            <div class="block-27">
+                                <ul>
+                                    {% if orders.has_previous %}
+                                        <li><a href="?page=1">&lt;&lt;</a></li>
+                                        <li><a href="?page={{ orders.previous_page_number }}">&lt;</a></li>
+                                    {% endif %}
+
+                                    {% for page_num in orders.paginator.page_range %}
+                                        {% if page_num == orders.number %}
+                                            <li class="active"><span>{{ page_num }}</span></li>
+                                        {% else %}
+                                            <li><a href="?page={{ page_num }}">{{ page_num }}</a></li>
+                                        {% endif %}
+                                    {% endfor %}
+
+                                    {% if orders.has_next %}
+                                        <li><a href="?page={{ orders.next_page_number }}">&gt;</a></li>
+                                        <li><a href="?page={{ orders.paginator.num_pages }}">&gt;&gt;</a></li>
+                                    {% endif %}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 </div>
                 <!-- End white background container -->
                 

@@ -44,13 +44,23 @@ def signup(request):
         if not re.match(r'^[A-Za-z0-9_]+$', form_data['username']):
             errors['username'] = 'Username can only contain letters, numbers, and underscores.'
 
-        # Check if passwords match
         if form_data['password'] != form_data['re_password']:
             errors['password_mismatch'] = 'Passwords do not match.'
 
-        # Password length validation
         if len(form_data['password']) < 8:
             errors['password_length'] = 'Password must be at least 8 characters long.'
+
+        if not re.search(r'[A-Z]', form_data['password']):
+            errors['password_uppercase'] = 'Password must contain at least one uppercase letter.'
+
+        if not re.search(r'[a-z]', form_data['password']):
+            errors['password_lowercase'] = 'Password must contain at least one lowercase letter.'
+
+        if not re.search(r'\d', form_data['password']):
+            errors['password_number'] = 'Password must contain at least one number.'
+
+        if not re.search(r'[!@#$%^&*(),.?":{}|<>]', form_data['password']):
+            errors['password_special'] = 'Password must contain at least one special character.'
 
         # Check if the email is unique
         if User.objects.filter(email=form_data['email']).exists():

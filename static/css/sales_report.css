@@ -13,6 +13,10 @@ body {
 .container {
     display: flex;
     min-height: 100vh;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding-right: 0 !important;
+    padding-left: 0 !important;
 }
 
 .sidebar {
@@ -74,15 +78,18 @@ header {
 }
 
 .logout-btn {
-    background-color: transparent;
-    color: #007bff;
+    background-color: red;
+    color: white;
+    padding: 7px 7px;
+    border-radius: 5px;
     text-decoration: none;
-    font-weight: 500;
+    font-weight: bold;
+    transition: background-color 0.3s ease;
 }
 
 .user-img {
-    width: 35px;
-    height: 35px;
+    width: 70px;
+    height: 70px;
     border-radius: 50%;
 }
 
@@ -224,10 +231,15 @@ header {
 }
 
 .filter-select, .date-input, .apply-button {
-    margin-right: 10px; /* Add some space on the right of each element */
+    margin-right: 10px;
 }
 
 /* Responsive Styles */
+@media (min-width: 1400px) {
+    .container {
+        max-width: 1710px !important;
+    }
+}
 @media (max-width: 1200px) {
     .metrics-grid {
         grid-template-columns: repeat(3, 1fr);

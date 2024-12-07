@@ -18,14 +18,14 @@
         <div class="brand">meatsouk</div>
         <ul>
           <li><a href="{% url 'admin_page' %}">Dashboard</a></li>
-          <li><a href="{% url 'user_page' %}">Users</a></li>
-          <li><a href="{% url 'admin_category' %}">Category</a></li>
-          <li><a href="{% url 'admin_product_view' %}">Products</a></li>
-          <li><a href="{% url 'admin_order_list' %}">Orders</a></li>
-          <li><a href="#">Coupons</a></li>
-          <li><a href="{% url 'admin_offer_management' %}">Offer</a></li>
-          <li><a href="{% url 'admin_pincode' %}">Pin code</a></li>
-          <li><a href="#">Sales reprot</a></li>
+                <li><a href="{% url 'user_page' %}">Users</a></li>
+                <li><a href="{% url 'admin_category' %}">Category</a></li>
+                <li><a href="{% url 'admin_product_view' %}">Products</a></li>
+                <li><a href="{% url 'admin_order_list' %}">Orders</a></li>
+                <li><a href="{% url 'coupon' %}">Coupons</a></li>
+                <li><a href="{% url 'admin_offer_management' %}">Offer</a></li>
+                <li><a href="{% url 'admin_pincode' %}">Pin code</a></li>
+                <li><a href="{% url 'sales_report' %}">Sales reprot</a></li>
       </ul>
       </nav>
 
@@ -41,7 +41,7 @@
               <a href="{% url 'admin_logout' %}">LOGOUT</a>
             </div>
             <div class="user-image">
-              <img src="user.jpg" alt="User">
+              <img src="{% static 'images/Ms_logo.jpg' %}" alt="User">
             </div>
           </div>
         </header>

@@ -51,14 +51,14 @@
                             <div class="cart-item card mb-3 p-3 shadow-sm border-0">
                                 <div class="d-flex align-items-center">
                                     <div class="product-image mr-3">
-                                        <img src="{{ cart_item.item.product.image1.url }}" alt="{{ cart_item.item.product.name }}" class="img-fluid rounded" style="width: 80px;">
+                                        <img src="{{ cart_item.item.products.image1.url }}" alt="{{ cart_item.item.product_name }}" class="img-fluid rounded" style="width: 80px;">
                                     </div>
                                     <div class="product-details flex-grow-1">
-                                        <h5 class="mb-1">{{ cart_item.item.products.name }}</h5>
-                                        <span class="text-muted">Quantity: {{ cart_item.item.quantity }} {{ cart_item.item.product.category.category_unit }}</span>
+                                        <p class="mb-1">{{ cart_item.item.products.product_name }}</p> <!-- Product Name -->
+                                        <span class="text-muted d-block">Quantity: {{ cart_item.item.quantity }} {{ cart_item.item.product.category.category_unit }}</span>
                                     </div>
                                     <div class="total-price">
-                                        <span class="font-weight-bold">₹{{ cart_item.item_subtotal }}</span>
+                                        <span class="font-weight-bold">total: ₹{{ cart_item.item_subtotal|floatformat:2 }}</span> <!-- Subtotal -->
                                     </div>
                                 </div>
                             </div>
@@ -77,11 +77,11 @@
                             <h3 class="billing-heading mb-4">Cart Total</h3>
                             <p class="d-flex">
                                 <span>Subtotal</span>
-                                <span>₹{{ subtotal_price }}</span>
+                                <span>₹{{ subtotal_price|floatformat:2 }}</span>
                             </p>
                             <p class="d-flex">
                                 <span>Delivery</span>
-                                <span>₹{{ delivery_charge }}</span>
+                                <span>₹{{ delivery_charge|floatformat:2 }}</span>
                             </p>
 
                             {% if request.session.coupon_code %}
@@ -94,7 +94,7 @@
                             <hr>
                             <p class="d-flex total-price">
                                 <span>Total</span>
-                                <span>₹{{ total_price }}</span>
+                                <span>₹{{ total_price|floatformat:2 }}</span>
                             </p>
                         </div>
                     </div>
@@ -188,59 +188,94 @@
     </div>
 </section>
 <script>
+    function saveFormState() {
+        // Save selected address
+        const selectedAddress = document.querySelector('input[name="address"]:checked');
+        if (selectedAddress) {
+            localStorage.setItem('selectedAddressId', selectedAddress.value);
+        }
+
+        // Save selected payment option
+        const selectedPayment = document.querySelector('input[name="option"]:checked');
+        if (selectedPayment) {
+            localStorage.setItem('selectedPaymentOption', selectedPayment.value);
+        }
+    }
+
+    // Function to restore form state
+    function restoreFormState() {
+        // Restore address selection
+        const savedAddressId = localStorage.getItem('selectedAddressId');
+        if (savedAddressId) {
+            const addressRadio = document.getElementById(`address${savedAddressId}`);
+            if (addressRadio) {
+                addressRadio.checked = true;
+            }
+        }
+
+        // Restore payment option selection
+        const savedPaymentOption = localStorage.getItem('selectedPaymentOption');
+        if (savedPaymentOption) {
+            const paymentRadio = document.querySelector(`input[name="option"][value="${savedPaymentOption}"]`);
+            if (paymentRadio) {
+                paymentRadio.checked = true;
+            }
+        }
+    }
     // Event listener for applying coupon
     document.getElementById('apply-coupon-btn').addEventListener('click', function() {
-         const couponCode = document.getElementById('coupon-code').value;
+        saveFormState();
+        const couponCode = document.getElementById('coupon-code').value;
  
-         fetch("{% url 'apply_coupon' %}", {
-             method: 'POST',
-             headers: {
-                 'Content-Type': 'application/json',
-                 'X-CSRFToken': '{{ csrf_token }}'
-             },
-             body: JSON.stringify({ coupon_code: couponCode, cart_total: {{ subtotal_price|floatformat:2 }} })
+        fetch("{% url 'apply_coupon' %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({ coupon_code: couponCode, cart_total: {{ subtotal_price|floatformat:2 }} })
          })
-         .then(response => response.json())
-         .then(data => {
-             const messageDiv = document.getElementById('coupon-message');
-             if (data.success) {
-                 messageDiv.innerHTML = `Coupon applied successfully!`;
-                 // Optionally refresh the page or update the total price
-                 location.reload(); // Reload to reflect new total
-             } else {
-                 messageDiv.innerHTML = `Error: ${data.error}`;
-             }
-         })
-         .catch(error => {
-             console.error('Error:', error);
-             document.getElementById('coupon-message').innerHTML = 'An error occurred. Please try again.';
-         });
-     });
+        .then(response => response.json())
+        .then(data => {
+            const messageDiv = document.getElementById('coupon-message');
+            if (data.success) {
+                messageDiv.innerHTML = `Coupon applied successfully!`;
+                location.reload(); // Reload to reflect new total
+            }else {
+                messageDiv.innerHTML = `Error: ${data.error}`;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            document.getElementById('coupon-message').innerHTML = 'An error occurred. Please try again.';
+        });
+    });
  
-     // Event listener for removing coupon
-     document.getElementById('remove-coupon-btn').addEventListener('click', function() {
-         fetch("{% url 'remove_coupon' %}", {
-             method: 'POST',
-             headers: {
-                 'Content-Type': 'application/json',
-                 'X-CSRFToken': '{{ csrf_token }}'
-             }
-         })
-         .then(response => response.json())
-         .then(data => {
-             const messageDiv = document.getElementById('coupon-message');
-             if (data.success) {
-                 messageDiv.innerHTML = `Coupon removed successfully!`;
-                 // Optionally refresh the page or update the total price
-                 location.reload(); // Reload to reflect new total
-             } else {
-                 messageDiv.innerHTML = `Error: ${data.error}`;
-             }
-         })
-         .catch(error => {
-             console.error('Error:', error);
-             document.getElementById('coupon-message').innerHTML = 'An error occurred. Please try again.';
-         });
-     });
+    // Event listener for removing coupon
+    document.getElementById('remove-coupon-btn').addEventListener('click', function() {
+        fetch("{% url 'remove_coupon' %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            const messageDiv = document.getElementById('coupon-message');
+            if (data.success) {
+                messageDiv.innerHTML = `Coupon removed successfully!`;
+                // Optionally refresh the page or update the total price
+                location.reload(); // Reload to reflect new total
+            } else {
+                messageDiv.innerHTML = `Error: ${data.error}`;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            document.getElementById('coupon-message').innerHTML = 'An error occurred. Please try again.';
+        });
+    });
+    document.addEventListener('DOMContentLoaded', restoreFormState);
  </script>
 {% endblock %}

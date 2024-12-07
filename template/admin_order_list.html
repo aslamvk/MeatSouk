@@ -19,11 +19,11 @@
                 <li><a href="{% url 'user_page' %}">Users</a></li>
                 <li><a href="{% url 'admin_category' %}">Category</a></li>
                 <li><a href="{% url 'admin_product_view' %}">Products</a></li>
-                <li><a href="#">Orders</a></li>
+                <li><a href="{% url 'admin_order_list' %}">Orders</a></li>
                 <li><a href="{% url 'coupon' %}">Coupons</a></li>
                 <li><a href="{% url 'admin_offer_management' %}">Offer</a></li>
                 <li><a href="{% url 'admin_pincode' %}">Pin code</a></li>
-                <li><a href="#">Sales reprot</a></li>
+                <li><a href="{% url 'sales_report' %}">Sales reprot</a></li>
             </ul>
         </nav>
 
@@ -42,7 +42,7 @@
                         <a href="{% url 'admin_logout' %}">LOGOUT</a>
                     </div>
                     <div class="user-image">
-                        <img src="user.jpg" alt="User">
+                        <img src="{% static 'images/Ms_logo.jpg' %}" alt="User">
                     </div>
                 </div>
             </header>
@@ -78,6 +78,46 @@
                             {% endfor %}
                         </tbody>
                     </table>
+                </div>
+                <div class="pagination-section">
+                    <div class="pagination">
+                        <ul>
+                            {% if orders.has_previous %}
+                                <!-- First page -->
+                                <li>
+                                    <a href="?page=1">&laquo; First</a>
+                                </li>
+                                <!-- Previous page -->
+                                <li>
+                                    <a href="?page={{ orders.previous_page_number }}">Previous</a>
+                                </li>
+                            {% endif %}
+                
+                            <!-- Page numbers -->
+                            {% for page_num in orders.paginator.page_range %}
+                                {% if page_num == orders.number %}
+                                    <li class="active">
+                                        <span>{{ page_num }}</span>
+                                    </li>
+                                {% else %}
+                                    <li>
+                                        <a href="?page={{ page_num }}">{{ page_num }}</a>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+                
+                            {% if orders.has_next %}
+                                <!-- Next page -->
+                                <li>
+                                    <a href="?page={{ orders.next_page_number }}">Next</a>
+                                </li>
+                                <!-- Last page -->
+                                <li>
+                                    <a href="?page={{ orders.paginator.num_pages }}">Last &raquo;</a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </div>
                 </div>
             </section>
         </main>

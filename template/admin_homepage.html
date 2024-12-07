@@ -13,7 +13,7 @@
         <nav class="sidebar">
             <div class="brand">Meatsouk</div>
             <ul>
-                <li><a href="#">Dashboard</a></li>
+                <li><a href="{% url 'admin_page' %}">Dashboard</a></li>
                 <li><a href="{% url 'user_page' %}">Users</a></li>
                 <li><a href="{% url 'admin_category' %}">Category</a></li>
                 <li><a href="{% url 'admin_product_view' %}">Products</a></li>
@@ -36,7 +36,7 @@
                         <a href="{% url 'admin_logout' %}">LOGOUT</a>
                     </div>
                     <div class="user-image">
-                        <img src="user.jpg" alt="User">
+                        <img src="{% static 'images/Ms_logo.jpg' %}" alt="User">
                 </div>
             </header>
 

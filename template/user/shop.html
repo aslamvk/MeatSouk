@@ -3,6 +3,7 @@
 {% block title %}Shop-Meatsouk{% endblock %}
 
 {% block content %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
 <style>
     .product {
         display: flex;
@@ -87,22 +88,33 @@
 	</div>
 
 	<div class="container mt-4">
-        <form method="get" action="{% url 'shop' %}">
-            <div class="row align-items-center">
-				<div class="col-md-4">
-					<form method="GET" action="{% url 'shop' %}"> 
-						<select name="sort" class="select-box select-box--transparent-b-2" onchange="this.form.submit()" style="height: 35px; width: 255px; border-radius: 15px;">
-							<option value="" disabled selected hidden>Sort By</option>
-							<option value="price_asc" {% if sort_option == 'price_asc' %}selected{% endif %}>Price (Low to High)</option>
-							<option value="price_desc" {% if sort_option == 'price_desc' %}selected{% endif %}>Price (High to Low)</option>
-							<option value="name_asc" {% if sort_option == 'name_asc' %}selected{% endif %}>Product (A to Z)</option>
-							<option value="name_desc" {% if sort_option == 'name_desc' %}selected{% endif %}>Product (Z to A)</option>
-						</select>
-					</form>
-	            </div>
-                </div>
+        <div class="row align-items-center">
+            <div class="col-md-4">
+                <form method="GET" action="{% url 'shop' %}"> 
+                    <select name="sort" class="select-box select-box--transparent-b-2" onchange="this.form.submit()" style="height: 35px; width: 255px; border-radius: 15px;">
+                        <option value="" disabled selected hidden>Sort By</option>
+                        <option value="price_asc" {% if sort_option == 'price_asc' %}selected{% endif %}>Price (Low to High)</option>
+                        <option value="price_desc" {% if sort_option == 'price_desc' %}selected{% endif %}>Price (High to Low)</option>
+                        <option value="name_asc" {% if sort_option == 'name_asc' %}selected{% endif %}>Product (A to Z)</option>
+                        <option value="name_desc" {% if sort_option == 'name_desc' %}selected{% endif %}>Product (Z to A)</option>
+                    </select>
+                    <input type="hidden" name="category" value="{{ selected_category }}">
+                </form>
             </div>
-        </form>
+            <div class="col-md-4">
+                <form method="GET" action="{% url 'shop' %}">
+                    <div class="position-relative">
+                        <i class="fas fa-map-marker-alt position-absolute" style="left: 10px; top: 50%; transform: translateY(-50%); z-index: 10; color: #6c757d;"></i>
+                        <select name="city" class="select-box select-box--transparent-b-2 pl-4" onchange="this.form.submit()" style="height: 35px; width: 255px; border-radius: 15px; padding-left: 30px;">
+                            <option value="" disabled selected hidden>Select City</option>
+                            {% for unique_city in cities %}
+                                <option value="{{ unique_city }}" {% if unique_city == current_city %}selected{% endif %}>{{ unique_city }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
 
     <section class="ftco-section">
@@ -149,21 +161,31 @@
   					<p>No products available.</p>
 				{% endfor %}
 			</div>				
-    		<div class="row mt-5">
-          <div class="col text-center">
+      <div class="row mt-5">
+        <div class="col text-center">
             <div class="block-27">
-              <ul>
-                <li><a href="#">&lt;</a></li>
-                <li class="active"><span>1</span></li>
-                <li><a href="#">2</a></li>
-                <li><a href="#">3</a></li>
-                <li><a href="#">4</a></li>
-                <li><a href="#">5</a></li>
-                <li><a href="#">&gt;</a></li>
-              </ul>
+                <ul>
+                    {% if products.has_previous %}
+                        <li><a href="?page=1{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}{% if request.GET.query %}&query={{ request.GET.query }}{% endif %}">&lt;&lt;</a></li>
+                        <li><a href="?page={{ products.previous_page_number }}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}{% if request.GET.query %}&query={{ request.GET.query }}{% endif %}">&lt;</a></li>
+                    {% endif %}
+    
+                    {% for page_num in products.paginator.page_range %}
+                        {% if page_num == products.number %}
+                            <li class="active"><span>{{ page_num }}</span></li>
+                        {% else %}
+                            <li><a href="?page={{ page_num }}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}{% if request.GET.query %}&query={{ request.GET.query }}{% endif %}">{{ page_num }}</a></li>
+                        {% endif %}
+                    {% endfor %}
+    
+                    {% if products.has_next %}
+                        <li><a href="?page={{ products.next_page_number }}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}{% if request.GET.query %}&query={{ request.GET.query }}{% endif %}">&gt;</a></li>
+                        <li><a href="?page={{ products.paginator.num_pages }}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}{% if request.GET.query %}&query={{ request.GET.query }}{% endif %}">&gt;&gt;</a></li>
+                    {% endif %}
+                </ul>
             </div>
-          </div>
         </div>
+    </div>
     	</div>
     </section>
 <script>

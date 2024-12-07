@@ -10,6 +10,7 @@ from offer.models import Product_Offers, Category_Offers
 from datetime import datetime
 from django.http import JsonResponse
 from decimal import Decimal
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 # Create your views here.
 
 @login_required(login_url='admin_login')
@@ -25,9 +26,19 @@ def admin_product_view(request):
         )
     else:
         products = Products.objects.all()
+
+    paginator = Paginator(products, 10)
+    page = request.GET.get('page', 1)
+    
+    try:
+        paginated_products = paginator.page(page)
+    except PageNotAnInteger:
+        paginated_products = paginator.page(1)
+    except EmptyPage:
+        paginated_products = paginator.page(paginator.num_pages)
         
 
-    return render(request, 'admin_product_view.html', {'products': products})
+    return render(request, 'admin_product_view.html', {'products': paginated_products})
 
 @login_required(login_url='admin_login')
 @never_cache
@@ -235,16 +246,24 @@ def shop(request):
     selected_category = request.GET.get('category', 'All')
     search_query = request.GET.get('query', None)
     sort_option = request.GET.get('sort', None)
+    cities = Pincode.objects.filter(is_listed=True).values_list('city', flat=True).distinct()
+    selected_city = request.GET.get('city')
+
+    pincode = request.session.get('pincode')
+    city = request.session.get('city')
+
+    if selected_city:
+        request.session['city'] = selected_city
+        request.session['pincode'] = None
+        city = selected_city
 
     if selected_category == 'All':
         products = Products.objects.filter(category__is_listed=True, is_listed=True)
     else:
         products = Products.objects.filter(category__category_name=selected_category, is_listed=True)
     
-    pincode = request.session.get('pincode')
-    city = request.session.get('city')
     error_message = None
-
+    
     if pincode:
         try:
             pincode_obj = Pincode.objects.get(pincode=pincode, is_listed=True)
@@ -307,13 +326,25 @@ def shop(request):
             'discount_percentage': round(discount_percentage, 2),
         })
 
+    paginator = Paginator(products_with_offers, 12)
+    page = request.GET.get('page', 1)
+
+    try:
+        paginated_products = paginator.page(page)
+    except PageNotAnInteger:
+        paginated_products = paginator.page(1)
+    except EmptyPage:
+        paginated_products = paginator.page(paginator.num_pages)
+
     context = {
         'categories': categories,
-        'products': products_with_offers,
+        'products': paginated_products,
         'selected_category': selected_category,
         'search_query': search_query,
         'sort_option': sort_option,
         'error_message': error_message,
+        'cities': cities,
+        'current_city': city,
     }
     return render(request, 'user/shop.html', context)
 
