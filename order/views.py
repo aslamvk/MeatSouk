@@ -41,7 +41,7 @@ from order.models import Invoice
 from django.views.decorators.cache import never_cache
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.db.models import ExpressionWrapper, F, DecimalField, Case, When
-
+from products.models import Products
 
 # Create your views here.
 
@@ -398,6 +398,8 @@ def user_single_order_items(request, order_id):
 def user_order_details(request,item_id):
     order_items = get_object_or_404(OrderItem, id=item_id)
     order = order_items.order
+
+    order_items.product = Products.objects.prefetch_related('images').get(id=order_items.product.id)
 
     original_price = order_items.quantity * order_items.price
     item_coupon_discount = original_price - order_items.subtotal_price

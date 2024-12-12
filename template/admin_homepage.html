@@ -99,7 +99,7 @@
                 <div class="products-grid">
                     {% for product in top_selling_products %}
                         <div class="product-card">
-                            <img src="/media/{{ product.product__image1 }}" alt="{{ product.product__product_name }}" class="product-image">
+                            <img src="{{ product.product__image1 }}" alt="{{ product.product__product_name }}" class="product-image">
                             <h3 class="product-name">{{ product.product__product_name }}</h3>
                             <p class="product-price">Price: ₹{{ product.product__price }}</p>
                             <p class="product-sold">Total Sold: {{ product.total_sold }} {{ product.product__product_unit }}</p>

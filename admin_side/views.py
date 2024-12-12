@@ -101,11 +101,20 @@ def admin_page(request):
 
         top_selling_products = (
             OrderItem.objects.values(
-                'product', 'product__product_name', 'product__price', 'product__image1', 'product__product_unit'
+                'product', 'product__product_name', 'product__price', 'product__product_unit'
             )
             .annotate(total_sold=Sum('quantity'))
             .order_by('-total_sold')[:6]
         )
+
+        top_selling_products_with_image = []
+        for product in top_selling_products:
+            product_obj = Products.objects.prefetch_related('images').get(id=product['product'])
+            first_image = product_obj.images.first()
+            
+            product_with_image = product.copy()
+            product_with_image['product__image1'] = first_image.image.url if first_image else ''
+            top_selling_products_with_image.append(product_with_image)
 
         top_selling_categories = OrderItem.objects.values(
             'product__category__id', 
@@ -126,7 +135,7 @@ def admin_page(request):
             'cancelled_orders': cancelled_orders,
             'chart_labels': chart_labels,
             'chart_values': chart_values,
-            'top_selling_products': top_selling_products,
+            'top_selling_products': top_selling_products_with_image,
             'top_selling_categories': top_selling_categories,
         }
 

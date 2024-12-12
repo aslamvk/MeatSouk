@@ -29,7 +29,13 @@
 									</a>
 								</td>
 								<td class="image-prod">
-									<div class="img" style="background-image:url({{ cart_item.item.products.image1.url }});"></div>
+									{% with primary_image=cart_item.item.products.images.first %}
+										{% if primary_image %}
+											<div class="img" style="background-image:url({{ primary_image.image.url }});"></div>
+										{% else %}
+											<div class="img" style="background-image:url({% static 'default_product_image.jpg' %});"></div>
+										{% endif %}
+									{% endwith %}
 								</td>
 								<td class="product-name">
 									<h3>{{ cart_item.item.products.product_name }}</h3>

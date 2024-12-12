@@ -67,7 +67,13 @@
                         {% for product in products %}
                         <tr>
                             <td>{{ product.id }}</td>
-                            <td><img src="{{ product.image1.url }}" alt="{{ product.product_name }}"></td>
+                            <td>
+                                {% if product.images.exists %}
+                                    <img src="{{ product.images.first.image.url }}" alt="{{ product.product_name }}" style="width: 100px; height: 100px;">
+                                {% else %}
+                                    <span>No Image</span>
+                                {% endif %}
+                            </td>
                             <td>{{ product.product_name }}</td>
                             <td>{{ product.category.category_name }}</td>
                             <td>{{ product.product_description }}</td>

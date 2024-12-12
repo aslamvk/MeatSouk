@@ -51,7 +51,12 @@
                             <div class="cart-item card mb-3 p-3 shadow-sm border-0">
                                 <div class="d-flex align-items-center">
                                     <div class="product-image mr-3">
-                                        <img src="{{ cart_item.item.products.image1.url }}" alt="{{ cart_item.item.product_name }}" class="img-fluid rounded" style="width: 80px;">
+                                        {% with primary_image=cart_item.item.products.images.first %}
+                                            <img src="{{ primary_image.image.url }}" 
+                                                alt="{{ cart_item.item.products.product_name }}" 
+                                                class="img-fluid rounded" 
+                                                style="width: 80px;">
+                                        {% endwith %}
                                     </div>
                                     <div class="product-details flex-grow-1">
                                         <p class="mb-1">{{ cart_item.item.products.product_name }}</p> <!-- Product Name -->

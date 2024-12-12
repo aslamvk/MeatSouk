@@ -7,6 +7,120 @@
     {% load static %}
     <link rel="stylesheet" href="{% static 'css/admin_product_edit.css' %}">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css" rel="stylesheet">
+    <style>
+        .images-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .image-upload-box {
+            position: relative;
+            width: 200px;
+            height: 200px;
+            border: 2px dashed #ccc;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+        .image-upload-box img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: cover;
+        }
+        .image-upload-box .overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0,0,0,0.5);
+            color: white;
+            padding: 5px;
+            text-align: center;
+            cursor: pointer;
+        }
+        .image-upload-box input[type="file"] {
+            display: none;
+        }
+        .delete-overlay {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            z-index: 10;
+        }
+        .delete-button {
+            background: #ff4d4f;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            font-size: 18px;
+            cursor: pointer;
+            width: 30px;
+            height: 30px;
+            line-height: 26px;
+            text-align: center;
+        }
+        .delete-button:hover {
+            background: #ff1a1a;
+        }
+        .image-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+        }
+        .image-item {
+            position: relative;
+            width: 200px;
+            height: 200px;
+            border: 2px dashed #ccc;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        .image-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .image-actions {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: space-between;
+            padding: 5px;
+            color: white;
+        }
+        .delete-image-btn {
+            background: #ff4d4f;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+        .add-image-box {
+            width: 200px;
+            height: 200px;
+            border: 2px dashed #ccc;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            cursor: pointer;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -54,22 +168,36 @@
                 <form class="edit-product-form" method="POST" action="{% url 'admin_product_edit' product.id %}" enctype="multipart/form-data">
                     {% csrf_token %}
 
-                    <!-- Photo Upload Section with Three Separate Image Inputs -->
-                    <div class="photo-upload">
-                        <div class="photo-box">
-                            <label for="image1">Image 1</label>
-                            <input type="file" name="image1" id="image1" accept="image/*" onchange="previewSelectedImage(this, 'preview1')">
-                            <img id="preview1" src="{% if product.image1 %}{{ product.image1.url }}{% endif %}" class="img-preview" style="display: {% if product.image1 %}block{% else %}none{% endif %};">
-                        </div>
-                        <div class="photo-box">
-                            <label for="image2">Image 2</label>
-                            <input type="file" name="image2" id="image2" accept="image/*" onchange="previewSelectedImage(this, 'preview2')">
-                            <img id="preview2" src="{% if product.image2 %}{{ product.image2.url }}{% endif %}" class="img-preview" style="display: {% if product.image2 %}block{% else %}none{% endif %};">
-                        </div>
-                        <div class="photo-box">
-                            <label for="image3">Image 3</label>
-                            <input type="file" name="image3" id="image3" accept="image/*" onchange="previewSelectedImage(this, 'preview3')">
-                            <img id="preview3" src="{% if product.image3 %}{{ product.image3.url }}{% endif %}" class="img-preview" style="display: {% if product.image3 %}block{% else %}none{% endif %};">
+                    <div class="product-images-container">
+                        <h3>Product Images</h3>
+                        
+                        <div class="image-grid">
+                            {% for image in product_images %}
+                                <div class="image-item">
+                                    <img src="{{ image.image.url }}" alt="Product Image">
+                                    <div class="image-actions">
+                                        {% if image.is_primary %}
+                                            <span class="primary-badge">Primary</span>
+                                        {% endif %}
+                                        <div class="action-buttons">
+                                            <button type="button" class="change-image-btn" onclick="triggerImageChange(this)">
+                                                🔄
+                                            </button>
+                                            {% if product_images.count > 1 %}
+                                                <button type="button" class="delete-image-btn" onclick="deleteImage({{ image.id }}, this)">
+                                                    🗑️
+                                                </button>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <input type="file" 
+                                        name="change_image_{{ image.id }}" 
+                                        accept="image/*" 
+                                        style="display:none;" 
+                                        onchange="previewAndCropExistingImage(this, {{ image.id }})">
+                                    <input type="hidden" name="existing_images" value="{{ image.id }}">
+                                </div>
+                            {% endfor %}
                         </div>
                     </div>
 
@@ -158,11 +286,14 @@
         </main>
     </div>
 
-    <div id="imageOverlay">
-        <div class="crop-container">
-            <img id="cropImage" alt="Image for cropping">
-            <button id="cropButton">Crop</button>
-            <button id="closeOverlayButton">Close</button>
+    <div id="cropperModal" class="modal">
+        <div class="modal-content">
+            <h3>Crop Image</h3>
+            <img id="cropImage" src="" style="max-width: 100%;">
+            <div class="modal-actions">
+                <button onclick="applyCrop()">Crop</button>
+                <button onclick="closeCropperModal()">Cancel</button>
+            </div>
         </div>
     </div>
 
@@ -170,70 +301,190 @@
     <script>
         let cropperInstance = null;
         let currentImageInput = null;
-        
-        function previewSelectedImage(input, imageId) {
+        let currentImageUploadBox = null;
+
+        function triggerImageUpload(element) {
+            const fileInput = element.querySelector('input[type="file"]');
+            fileInput.click();
+        }
+
+        function previewAndCropImages(input) {
             currentImageInput = input;
-            const file = input.files[0];
-        
-            if (file && file.type.startsWith('image/')) {
-                const reader = new FileReader();
-                reader.onload = function (e) {
-                    openCropperOverlay(e.target.result);
-                };
-                reader.readAsDataURL(file);
-            } else {
-                alert('Please upload a valid image file.');
-            }
-        }
-        
-        function openCropperOverlay(imageSrc) {
-            const cropImage = document.getElementById('cropImage');
-            const imageOverlay = document.getElementById('imageOverlay');
-        
-            if (cropperInstance) {
-                cropperInstance.destroy();
-                cropperInstance = null;
-            }
-        
-            cropImage.src = imageSrc;  
-            imageOverlay.style.display = "flex"; 
-        
-            cropImage.onload = function() {
-                cropperInstance = new Cropper(cropImage, {
-                    aspectRatio: 1,
-                    viewMode: 1,
-                    autoCropArea: 1,
-                });
-            };
-        }
-        
-        document.getElementById('cropButton').addEventListener('click', function () {
-            if (cropperInstance) {
-                const canvas = cropperInstance.getCroppedCanvas({ width: 300, height: 300 });
-        
-                if (canvas) {
-                    canvas.toBlob(function (blob) {
-                        const croppedImage = new File([blob], currentImageInput.files[0].name, { type: 'image/png' });
-                        const dataTransfer = new DataTransfer();
-                        dataTransfer.items.add(croppedImage);
-                        currentImageInput.files = dataTransfer.files;
-        
-                        const imgPreviewId = 'preview' + currentImageInput.id.slice(-1);
-                        document.getElementById(imgPreviewId).src = URL.createObjectURL(croppedImage);
-                        document.getElementById(imgPreviewId).style.display = "block"; 
-                        document.getElementById('imageOverlay').style.display = "none";
-                    }, 'image/png');
+            currentImageUploadBox = input.closest('.add-image-box');
+            
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                
+                if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    
+                    reader.onload = function(e) {
+                        // Pass null for imageId when adding a new image
+                        openCropperModal(e.target.result, null);
+                    };
+                    
+                    reader.readAsDataURL(file);
+                } else {
+                    alert('Please upload a valid image file.');
                 }
             }
-        });
+        }
         
-        document.getElementById('closeOverlayButton').addEventListener('click', function () {
-            document.getElementById('imageOverlay').style.display = "none";
+        function openCropperModal(imageSrc, imageId) {
+            const cropperModal = document.getElementById('cropperModal');
+            const cropImage = document.getElementById('cropImage');
+            
+            // Explicitly set the imageId, using null if undefined
+            cropperModal.dataset.imageId = imageId || null;
+            
+            // Destroy existing cropper if any
+            if (cropperInstance) {
+                cropperInstance.destroy();
+            }
+            
+            cropImage.src = imageSrc;
+            cropperModal.style.display = 'block';
+            
+            // Initialize Cropper.js
+            cropperInstance = new Cropper(cropImage, {
+                aspectRatio: 1,
+                viewMode: 1,
+                autoCropArea: 1,
+            });
+        }
+        
+        function applyCrop() {
+            if (cropperInstance) {
+                const cropperModal = document.getElementById('cropperModal');
+                const imageId = cropperModal.dataset.imageId || null;
+        
+                const canvas = cropperInstance.getCroppedCanvas({
+                    width: 300,
+                    height: 300
+                });
+                
+                canvas.toBlob(function(blob) {
+                    const croppedFile = new File([blob], 'cropped_image.png', {type: 'image/png'});
+                    
+                    const formData = new FormData();
+                    formData.append('csrfmiddlewaretoken', "{{ csrf_token }}");
+                    
+                    // Determine action based on whether it's a new or existing image
+                    if (imageId) {
+                        formData.append('action', 'change_image');
+                        formData.append('image_id', imageId);
+                    } else {
+                        formData.append('action', 'add_image');
+                    }
+                    formData.append('new_image', croppedFile);
+                    
+                    fetch("{% url 'admin_product_edit' product.id %}", {
+                        method: "POST",
+                        headers: {
+                            "X-Requested-With": "XMLHttpRequest",
+                        },
+                        body: formData
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === "success") {
+                            // Handle new image addition
+                            if (!imageId) {
+                                const imageGrid = document.querySelector('.image-grid');
+                                const newImageItem = document.createElement('div');
+                                newImageItem.className = 'image-item';
+                                newImageItem.innerHTML = `
+                                    <img src="${data.image_url}" alt="Product Image">
+                                    <div class="image-actions">
+                                        <div class="action-buttons">
+                                            <button type="button" class="change-image-btn" onclick="triggerImageChange(this)">
+                                                🔄
+                                            </button>
+                                            <button type="button" class="delete-image-btn" onclick="deleteImage(${data.image_id}, this)">
+                                                🗑️
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <input type="file" 
+                                        name="change_image_${data.image_id}" 
+                                        accept="image/*" 
+                                        style="display:none;" 
+                                        onchange="previewAndCropExistingImage(this, ${data.image_id})">
+                                    <input type="hidden" name="existing_images" value="${data.image_id}">
+                                `;
+                                
+                                // Insert before the add image box
+                                imageGrid.insertBefore(newImageItem, imageGrid.lastElementChild);
+                                
+                                // Remove add image box if max images reached
+                                if (imageGrid.querySelectorAll('.image-item').length >= 6) {
+                                    imageGrid.lastElementChild.remove();
+                                }
+                            } else {
+                                // Update existing image
+                                const imageItem = document.querySelector(`.image-item input[value="${imageId}"]`).closest('.image-item');
+                                const img = imageItem.querySelector('img');
+                                img.src = data.image_url;
+                            }
+                            
+                            // Close cropper modal
+                            closeCropperModal();
+                            
+                            alert('Image updated successfully');
+                        } else {
+                            alert('Error updating image: ' + data.message);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('An error occurred while updating the image.');
+                    });
+                }, 'image/png');
+            }
+        }
+        
+        function closeCropperModal() {
+            const cropperModal = document.getElementById('cropperModal');
+            cropperModal.style.display = 'none';
+            
             if (cropperInstance) {
                 cropperInstance.destroy();
                 cropperInstance = null;
             }
-        });
+        }
+        
+        function deleteImage(imageId, buttonElement) {
+            if (confirm('Are you sure you want to delete this image?')) {
+                const formData = new FormData();
+                formData.append('csrfmiddlewaretoken', "{{ csrf_token }}");
+                formData.append('action', 'delete_image');
+                formData.append('image_id', imageId);
+    
+                fetch("{% url 'admin_product_edit' product.id %}", {
+                    method: "POST",
+                    headers: {
+                        "X-Requested-With": "XMLHttpRequest",
+                    },
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === "success") {
+                        // Remove the image from the UI
+                        const imageItem = buttonElement.closest('.image-item');
+                        imageItem.remove();
+                        
+                        alert('Image deleted successfully');
+                    } else {
+                        alert('Error deleting image: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred while deleting the image.');
+                });
+            }
+        }
     </script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
@@ -262,6 +513,7 @@
                 // Prepare data to send
                 const formData = new FormData();
                 formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+                formData.append('action', 'update_pincodes');
                 selectedPincodes.forEach(pincode => {
                     formData.append('pincodes', pincode);
                 });
@@ -355,6 +607,108 @@
                 stockInput.step = '1';
             }
         });
+
+        function triggerImageChange(buttonElement) {
+            const imageItem = buttonElement.closest('.image-item');
+            const fileInput = imageItem.querySelector('input[type="file"]');
+            fileInput.click();
+        }
+        function previewAndCropExistingImage(input, imageId) {
+            currentImageInput = input;
+            currentImageUploadBox = input.closest('.image-item');
+            
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                
+                if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    
+                    reader.onload = function(e) {
+                        openCropperModal(e.target.result, imageId);
+                    };
+                    
+                    reader.readAsDataURL(file);
+                } else {
+                    alert('Please upload a valid image file.');
+                }
+            }
+        }
+        
+        function openCropperModal(imageSrc, imageId) {
+            const cropperModal = document.getElementById('cropperModal');
+            const cropImage = document.getElementById('cropImage');
+            
+            // Store the current image ID for backend processing
+            cropperModal.dataset.imageId = imageId;
+            
+            // Destroy existing cropper if any
+            if (cropperInstance) {
+                cropperInstance.destroy();
+            }
+            
+            cropImage.src = imageSrc;
+            cropperModal.style.display = 'block';
+            
+            // Initialize Cropper.js
+            cropperInstance = new Cropper(cropImage, {
+                aspectRatio: 1,
+                viewMode: 1,
+                autoCropArea: 1,
+            });
+        }
+        
+        function applyCrop() {
+            if (cropperInstance) {
+                const cropperModal = document.getElementById('cropperModal');
+                const imageId = cropperModal.dataset.imageId;
+                
+                const canvas = cropperInstance.getCroppedCanvas({
+                    width: 300,
+                    height: 300
+                });
+                
+                canvas.toBlob(function(blob) {
+                    // Create a new file from the blob
+                    const croppedFile = new File([blob], 'cropped_image.png', {type: 'image/png'});
+                    
+                    // Create a new FormData to send the image
+                    const formData = new FormData();
+                    formData.append('csrfmiddlewaretoken', "{{ csrf_token }}");
+                    formData.append('action', 'change_image');
+                    formData.append('image_id', imageId);
+                    formData.append('new_image', croppedFile);
+                    
+                    // Send AJAX request to update image
+                    fetch("{% url 'admin_product_edit' product.id %}", {
+                        method: "POST",
+                        headers: {
+                            "X-Requested-With": "XMLHttpRequest",
+                        },
+                        body: formData
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === "success") {
+                            // Update image in UI
+                            const imageItem = document.querySelector(`.image-item input[value="${imageId}"]`).closest('.image-item');
+                            const img = imageItem.querySelector('img');
+                            img.src = data.image_url;
+                            
+                            // Close cropper modal
+                            closeCropperModal();
+                            
+                            alert('Image updated successfully');
+                        } else {
+                            alert('Error updating image: ' + data.message);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('An error occurred while updating the image.');
+                    });
+                }, 'image/png');
+            }
+        }
     </script>
 </body>
 </html>

@@ -11,6 +11,10 @@ from datetime import datetime
 from django.http import JsonResponse
 from decimal import Decimal
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from products.models import ProductImage
+import os
+import uuid
+from django.conf import settings
 # Create your views here.
 
 @login_required(login_url='admin_login')
@@ -54,9 +58,7 @@ def admin_product_add(request):
         stock = request.POST.get('stock')
         product_unit = request.POST.get('product_unit')
         product_description = request.POST.get('product_description')
-        image1 = request.FILES.get('image1')
-        image2 = request.FILES.get('image2')
-        image3 = request.FILES.get('image3')
+        images = request.FILES.getlist('product_images')
         selected_pincodes = request.POST.getlist('pincodes')
 
         if not product_name:
@@ -65,52 +67,52 @@ def admin_product_add(request):
             error_message = "All fields are required."
         elif Decimal(price) <= Decimal('0'):
             error_message = "Price must be greater than zero."
-        elif not image1 or not image2 or not image3:
-            error_message = "All three product images are required."
+        elif len(images) < 3 or len(images) > 6:
+            error_message = "You must upload between 3 and 6 images."
         else:
             try:
                 if product_unit == 'kg':
-                    try:
-                        stock_decimal = Decimal(stock)
-                        if stock_decimal <= Decimal('0'):
-                            error_message = "Stock must be greater than zero."
-                        elif stock_decimal < Decimal('0.01'):
-                            error_message = "Minimum stock for kg products should be 0.01 kg"
-                    except (ValueError, TypeError):
-                        error_message = "Invalid stock value for kg unit"
+                    stock_decimal = Decimal(stock)
+                    if stock_decimal <= Decimal('0') or stock_decimal < Decimal('0.01'):
+                        error_message = "Stock must be greater than 0.01 kg."
                 
                 elif product_unit == 'piece':
-                    try:
-                        stock_decimal = Decimal(stock)
-                        if stock_decimal % 1 != 0:
-                            error_message = "Stock must be a whole number for piece units (no fractions allowed)"
-                        elif stock_decimal <= Decimal('0'):
-                            error_message = "Stock must be greater than zero."
-                        stock_decimal = int(stock_decimal)
-                    except (ValueError, TypeError):
-                        error_message = "Stock must be a whole number for piece units"
+                    stock_decimal = Decimal(stock)
+                    if stock_decimal % 1 != 0 or stock_decimal <= Decimal('0'):
+                        error_message = "Stock must be a whole number greater than zero."
+                    stock_decimal = int(stock_decimal)
                 
                 else:
                     error_message = "Invalid unit type. Must be either 'kg' or 'piece'"
 
+                # Check for existing product variant
                 if not error_message:
-                    if Products.objects.filter(product_name__iexact=product_name, product_unit=product_unit).exists():
+                    if Products.objects.filter(
+                        product_name__iexact=product_name, 
+                        product_unit=product_unit
+                    ).exists():
                         error_message = f"A product variant with the name '{product_name}' and unit '{product_unit}' already exists."
                     else:
+                        # Create product
                         category = Category.objects.get(id=category_id)
-                        product = Products(
+                        product = Products.objects.create(
                             product_name=product_name,
                             category=category,
                             price=Decimal(price),
                             stock=stock_decimal,
                             product_unit=product_unit,
                             product_description=product_description,
-                            image1=image1,
-                            image2=image2,
-                            image3=image3
                         )
-                        product.save()
 
+                        # Save images
+                        for index, img in enumerate(images):
+                            ProductImage.objects.create(
+                                product=product, 
+                                image=img, 
+                                is_primary=(index == 0)
+                            )
+
+                        # Set pincodes
                         product.pincode.set(selected_pincodes)
 
                         return redirect('admin_product_view')
@@ -133,25 +135,23 @@ def admin_product_edit(request, product_id):
     categories = Category.objects.all()
     product_pincodes = product.pincode.values_list('id', flat=True)
     pincodes = Pincode.objects.all()
+    product_images = product.images.all() if product else None
+    remaining_slots = 6 - product_images.count() if product_images else 6
     error_message = None
 
-    if request.headers.get('X-Requested-With') == 'XMLHttpRequest' and request.method == 'POST':
-        try:
-            selected_pincodes = request.POST.getlist('pincodes')
-            product.pincode.clear()
-            if selected_pincodes:
-                pincodes = Pincode.objects.filter(id__in=selected_pincodes)
-                product.pincode.add(*pincodes)
-            product.save()
-            return JsonResponse({
-                'status': 'success', 
-                'message': 'Pincodes updated successfully'
-            })
-        except Exception as e:
-            return JsonResponse({
-                'status': 'error', 
-                'message': str(e)
-            }, status=400)
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        if request.method == 'POST':
+            action = request.POST.get('action')
+            
+            if action == 'change_image':
+                return handle_change_image(request, product_id)
+            elif action == 'delete_image':
+                return handle_delete_image(request, product_id, product_images)
+            elif action == 'update_pincodes':
+                return handle_update_pincodes(request, product)
+            else:
+                return JsonResponse({'status': 'error', 'message': 'Invalid action'}, status=400)
+
 
     if request.method == 'POST':
         product_name = request.POST.get('product_name', '').strip()
@@ -160,10 +160,24 @@ def admin_product_edit(request, product_id):
         stock = request.POST.get('stock')
         product_unit = request.POST.get('product_unit')
         product_description = request.POST.get('product_description')
-        image1 = request.FILES.get('image1')
-        image2 = request.FILES.get('image2')
-        image3 = request.FILES.get('image3')
         selected_pincodes = request.POST.getlist('pincodes') or list(product_pincodes)
+
+        remove_image_ids = request.POST.getlist('remove_images')
+        new_images = request.FILES.getlist('product_images')
+
+        if remove_image_ids:
+            ProductImage.objects.filter(
+                id__in=remove_image_ids, 
+                product=product
+            ).delete()
+
+
+        for img in new_images[:remaining_slots]:
+            ProductImage.objects.create(
+                product=product, 
+                image=img, 
+                is_primary=False
+            )
 
         if not product_name:
             error_message = "Product name is required and cannot be blank."
@@ -209,16 +223,10 @@ def admin_product_edit(request, product_id):
                         product.stock = stock_decimal
                         product.product_unit = product_unit
                         product.product_description = product_description
-
-                        if image1:
-                            product.image1 = image1
-                        if image2:
-                            product.image2 = image2
-                        if image3:
-                            product.image3 = image3
-
                         product.save()
+                        
 
+                        # Update pincodes
                         product.pincode.clear()
                         if selected_pincodes:
                             pincodes = Pincode.objects.filter(id__in=selected_pincodes)
@@ -231,13 +239,73 @@ def admin_product_edit(request, product_id):
 
     context = {
         'product': product,
+        'product_images': product_images,
         'categories': categories,
         'pincodes': pincodes,
         'product_pincodes': product_pincodes,
         'error_message': error_message,
         'unit_choices': Products.UNIT_CHOICES,
+        "remaining_slots": remaining_slots,
     }
     return render(request, 'admin_product_edit.html', context)
+def handle_change_image(request, product_id):
+    new_image = request.FILES.get('new_image')
+    image_id = request.POST.get('image_id')
+    
+    if not new_image or not image_id:
+        return JsonResponse({'status': 'error', 'message': 'Missing image or image ID'}, status=400)
+    
+    try:
+        image = ProductImage.objects.get(id=image_id, product_id=product_id)
+        image.image = new_image
+        image.save()
+        return JsonResponse({'status': 'success', 'message': 'Image updated', 'image_url': image.image.url})
+    except ProductImage.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'Image not found'}, status=404)
+    
+def handle_delete_image(request, product_id, product_images):
+    image_id = request.POST.get('image_id')
+    
+    if not image_id:
+        return JsonResponse({'status': 'error', 'message': 'Image ID is required'}, status=400)
+    
+    try:
+        if product_images.count() <= 1:
+            return JsonResponse({'status': 'error', 'message': 'Cannot delete the last image'}, status=400)
+        
+        image = ProductImage.objects.get(id=image_id, product_id=product_id)
+        image.delete()
+        return JsonResponse({'status': 'success', 'message': 'Image deleted'})
+    except ProductImage.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'Image not found'}, status=404)
+
+def handle_update_pincodes(request, product):
+    selected_pincodes = request.POST.getlist('pincodes')
+    
+    try:
+        product.pincode.clear()
+        if selected_pincodes:
+            pincodes = Pincode.objects.filter(id__in=selected_pincodes)
+            product.pincode.add(*pincodes)
+        return JsonResponse({'status': 'success', 'message': 'Pincodes updated successfully'})
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+
+
+def handle_uploaded_image(image_file):
+
+    filename = f"{uuid.uuid4()}.png"
+    
+
+    full_path = os.path.join(settings.MEDIA_ROOT, 'product_images', filename)
+    
+    os.makedirs(os.path.dirname(full_path), exist_ok=True)
+    
+    with open(full_path, 'wb+') as destination:
+        for chunk in image_file.chunks():
+            destination.write(chunk)
+    
+    return os.path.join(settings.MEDIA_URL, 'product_images', filename)
 
 @login_required(login_url='login')
 @never_cache
@@ -319,8 +387,11 @@ def shop(request):
 
         final_price -= (final_price * discount_percentage / 100)
 
+        product_images = product.images.all()
+
         products_with_offers.append({
             'product': product,
+            'product_images': product_images,
             'best_offer': best_offer,
             'final_price': round(final_price, 2),
             'discount_percentage': round(discount_percentage, 2),
@@ -354,6 +425,7 @@ def shop(request):
 @never_cache
 def product_details(request,product_id):
     product = get_object_or_404(Products,id=product_id)
+    product_images = product.images.all()
     username = request.user.username
 
     now = datetime.now()
@@ -384,6 +456,7 @@ def product_details(request,product_id):
     context = {
         'product': product,
         'best_offer': best_offer,
+        'product_images': product_images,
         'final_price': round(final_price, 2),
         'username': username,
         'discount_percentage': round(discount_percentage, 2),

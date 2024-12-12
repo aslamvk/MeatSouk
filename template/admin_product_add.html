@@ -50,32 +50,20 @@
                 <form class="add-product-form" method="POST" enctype="multipart/form-data" onsubmit="return validateForm()">
                     {% csrf_token %}
                     <div class="photo-upload">
-                        <!-- Image Upload Fields -->
-                        <div class="col-md-3">
-                            <input type="file" name="image1" class="form-control" id="image1" accept="image/*" onchange="previewSelectedImage(this, 'preview1', event)">
-                            {% if product.image1 %}
-                                <img id="preview1" src="{{ product.image1.url }}" class="img-thumbnail mt-2" style="max-width: 100px; max-height: 100px;">
-                            {% else %}
-                                <img id="preview1" class="img-thumbnail mt-2" style="display: none; max-width: 100px; max-height: 100px;">
-                            {% endif %}
+                        <label for="product_images">Upload Product Images (3-6 images)</label>
+                        <input type="file" 
+                               name="product_images" 
+                               id="product_images" 
+                               accept="image/*" 
+                               multiple 
+                               min="3" 
+                               max="6" 
+                               onchange="handleImageUpload(this)">
+                        
+                        <div id="image-preview-container" class="image-previews">
+                            <!-- Dynamic image previews will be added here -->
                         </div>
-                        <div class="col-md-3">
-                            <input type="file" name="image2" class="form-control" id="image2" accept="image/*" onchange="previewSelectedImage(this, 'preview2', event)">
-                            {% if product.image2 %}
-                                <img id="preview2" src="{{ product.image2.url }}" class="img-thumbnail mt-2" style="max-width: 100px; max-height: 100px;">
-                            {% else %}
-                                <img id="preview2" class="img-thumbnail mt-2" style="display: none; max-width: 100px; max-height: 100px;">
-                            {% endif %}
-                        </div>
-                        <div class="col-md-3">
-                            <input type="file" name="image3" class="form-control" id="image3" accept="image/*" onchange="previewSelectedImage(this, 'preview3', event)">
-                            {% if product.image3 %}
-                                <img id="preview3" src="{{ product.image3.url }}" class="img-thumbnail mt-2" style="max-width: 100px; max-height: 100px;">
-                            {% else %}
-                                <img id="preview3" class="img-thumbnail mt-2" style="display: none; max-width: 100px; max-height: 100px;">
-                            {% endif %}
-                        </div>
-                    </div>
+                        <br>
 
                     <div class="form-group">
                         <input type="text" name="product_name" placeholder="Product Name" required>
@@ -149,49 +137,71 @@
             </section>
         </main>
     </div>
-
     <div id="imageOverlay">
         <div class="crop-container">
             <img id="cropImage" alt="Image for cropping">
-            <button id="cropButton">Crop</button>
+            <button id="cropButton" type="button">Crop</button>
             <button id="closeOverlayButton">Close</button>
         </div>
     </div>
 
-
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.js"></script>
     <script>
         let cropperInstance = null;
-        let currentImageInput = null;
+        let currentImageToEdit = null;
         
-        function previewSelectedImage(input, imageId) {
-            currentImageInput = input;
-            const file = input.files[0];
+        function handleImageUpload(input) {
+            const previewContainer = document.getElementById('image-preview-container');
+            previewContainer.innerHTML = ''; // Clear previous previews
         
-            if (file && file.type.startsWith('image/')) {
+            const files = input.files;
+            
+            if (files.length < 3 || files.length > 6) {
+                alert('Please select between 3 and 6 images');
+                input.value = ''; // Clear the file input
+                return;
+            }
+        
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
                 const reader = new FileReader();
         
-                reader.onload = function (e) {
-                    openCropperOverlay(e.target.result);
-                };
+                reader.onload = function(e) {
+                    const previewDiv = document.createElement('div');
+                    previewDiv.className = 'image-preview';
+                    
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.style.maxWidth = '100px';
+                    img.style.maxHeight = '100px';
+                    
+                    const cropButton = document.createElement('button');
+                    cropButton.textContent = 'Crop';
+                    cropButton.type = 'button';
+                    cropButton.onclick = () => openCropperForImage(img, file, i);
+        
+                    previewDiv.appendChild(img);
+                    previewDiv.appendChild(cropButton);
+                    previewContainer.appendChild(previewDiv);
+                }
         
                 reader.readAsDataURL(file);
-            } else {
-                alert('Please upload a valid image file.');
             }
         }
         
-        function openCropperOverlay(imageSrc) {
-            const cropImage = document.getElementById('cropImage');
+        function openCropperForImage(img, file, index) {
             const imageOverlay = document.getElementById('imageOverlay');
+            const cropImage = document.getElementById('cropImage');
         
+            currentImageToEdit = { img, file, index };
+        
+            cropImage.src = img.src;
+            imageOverlay.style.display = "flex";
+        
+            // Destroy existing cropper instance if any
             if (cropperInstance) {
                 cropperInstance.destroy();
-                cropperInstance = null;
             }
-        
-            cropImage.src = imageSrc;  
-            imageOverlay.style.display = "flex"; 
         
             cropImage.onload = function() {
                 cropperInstance = new Cropper(cropImage, {
@@ -203,19 +213,32 @@
         }
         
         document.getElementById('cropButton').addEventListener('click', function () {
-            if (cropperInstance) {
+            if (cropperInstance && currentImageToEdit) {
                 const canvas = cropperInstance.getCroppedCanvas({ width: 300, height: 300 });
-        
+                
                 if (canvas) {
-                    canvas.toBlob(function (blob) {
-                        const croppedImage = new File([blob], currentImageInput.files[0].name, { type: 'image/png' });
+                    canvas.toBlob(function(blob) {
+                        const croppedImageFile = new File([blob], currentImageToEdit.file.name, { type: 'image/png' });
+                        
+                        // Update the preview image
+                        currentImageToEdit.img.src = URL.createObjectURL(croppedImageFile);
+                        
+                        // Update the file in the input
+                        const input = document.getElementById('product_images');
                         const dataTransfer = new DataTransfer();
-                        dataTransfer.items.add(croppedImage);
-                        currentImageInput.files = dataTransfer.files;
-        
-                        const imgPreviewId = 'preview' + currentImageInput.id.slice(-1);
-                        document.getElementById(imgPreviewId).src = URL.createObjectURL(croppedImage);
-                        document.getElementById(imgPreviewId).style.display = "block"; 
+                        
+                        // Replace the original file with the cropped file
+                        for (let i = 0; i < input.files.length; i++) {
+                            if (i === currentImageToEdit.index) {
+                                dataTransfer.items.add(croppedImageFile);
+                            } else {
+                                dataTransfer.items.add(input.files[i]);
+                            }
+                        }
+                        
+                        input.files = dataTransfer.files;
+                        
+                        // Close overlay
                         document.getElementById('imageOverlay').style.display = "none";
                     }, 'image/png');
                 }
@@ -227,27 +250,26 @@
             if (cropperInstance) {
                 cropperInstance.destroy();
                 cropperInstance = null;
-            }
-        });
-    </script>
-    <script>
+            }
+        });
+        
+        // Existing pincode modal functions
         function openPincodeModal() {
             document.getElementById("pincodeModal").style.display = "block";
         }
-    
+        
         function closePincodeModal() {
             document.getElementById("pincodeModal").style.display = "none";
         }
-    
-        // Close modal when clicking outside of it
+        
         window.onclick = function(event) {
             const modal = document.getElementById("pincodeModal");
             if (event.target == modal) {
                 modal.style.display = "none";
             }
         }
-    </script>
-    <script>
+        
+        // Stock field and validation functions
         function updateStockField() {
             const unitSelect = document.getElementById('product_unit');
             const stockInput = document.getElementById('stock_input');
@@ -267,7 +289,15 @@
             const unitSelect = document.getElementById('product_unit');
             const stockInput = document.getElementById('stock_input');
             const stockValue = parseFloat(stockInput.value);
+            const imageInput = document.getElementById('product_images');
         
+            // Image validation
+            if (imageInput.files.length < 3 || imageInput.files.length > 6) {
+                alert('Please select between 3 and 6 images');
+                return false;
+            }
+        
+            // Stock validation
             if (unitSelect.value === 'piece' && !Number.isInteger(stockValue)) {
                 alert('Stock must be a whole number for piece units');
                 return false;

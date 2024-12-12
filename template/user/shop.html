@@ -138,8 +138,14 @@
     				<div class="product">
 						
     					<a href="{% url 'single_product' item.product.id %}" class="img-prod">
-							<img class="img-fluid" src="{{ item.product.image1.url }}" alt="{{ item.product.product_name }}">
-						</a>
+                            {% with images=item.product.images.all %}
+                                {% if images %}
+                                    <img class="img-fluid" src="{{ images.first.image.url }}" alt="{{ item.product.product_name }}">
+                                {% else %}
+                                    <img class="img-fluid" src="{% static 'default_image.jpg' %}" alt="{{ item.product.product_name }}">
+                                {% endif %}
+                            {% endwith %}
+                        </a>
 						
     					<div class="text py-3 pb-4 px-3 text-center">
     						<h3><a href="{% url 'single_product' item.product.id %}">{{item.product.product_name}}</a></h3>

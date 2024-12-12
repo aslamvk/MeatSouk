@@ -95,7 +95,17 @@
                 </thead>
                 <tbody>
                   <tr>
-                    <td><img src="{{ order_items.product.image1.url }}" alt="Item 1" class="img-fluid rounded-circle" style="width: 100px; height: 100px; object-fit: cover;"></td>
+                    {% if order_items.product.images.exists %}
+                        <td>
+                            <img src="{{ order_items.product.images.first.image.url }}" 
+                                alt="{{ order_items.product.product_name }}" 
+                                class="img-fluid rounded-circle" 
+                                style="width: 100px; height: 100px; object-fit: cover;">
+                        </td>
+                    {% else %}
+                        <td>No Image Available</td>
+                    {% endif %}
+
                     <td>{{order_items.product.product_name}}</td>
                     <td>{{order_items.quantity}} {{order_items.product.category.category_unit}}</td>
                     <td>{{ item_coupon_discount|floatformat:2 }}</td>
