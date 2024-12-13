@@ -30,7 +30,7 @@ SECRET_KEY = 'django-insecure-fpkzwy=z#u1-l@zww1zd!1f4g@i7wz2g1ae^+8lrf1d&(xbn*#
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['13.60.18.100', '0.0.0.0','meatsouk.onthewifi.com']
+ALLOWED_HOSTS = ['13.60.18.100', '0.0.0.0','127.0.0.1','meatsouk.onthewifi.com']
 
 
 # Application definition
@@ -107,7 +107,7 @@ DATABASES = {
         'HOST': 'localhost',
         'PORT': '5432',
         'USER': 'postgres',
-        'PASSWORD': 'aslam123',
+        'PASSWORD': os.getenv('POSTGRES_PASSWORD'),
     }
 }
 
