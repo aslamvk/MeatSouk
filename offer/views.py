@@ -24,10 +24,6 @@ def admin_product_offer(request):
     product_offer = Product_Offers.objects.all()
     products = Products.objects.all()
 
-    print("Available Products in Database:")
-    for product in products:
-        print(f"ID: {product.id}, Name: {product.product_name}, Price: {product.price}")
-
     if request.method == 'POST':
         offer_name = request.POST.get('offer_name')
         product_id = request.POST.get('product')
@@ -39,7 +35,12 @@ def admin_product_offer(request):
         if offer_name and products and offer_percentage and valid_from and valid_to and offer_details:
             try:
                 offer_percentage = Decimal(offer_percentage)
-                if offer_percentage > 80:
+                if offer_percentage < 1:
+                    messages.error(
+                        request,
+                        "Discount percentage cannot be less than 1%."
+                    )
+                elif offer_percentage > 80:
                     messages.error(
                         request,
                         "Discount percentage cannot exceed 80%."
@@ -80,7 +81,12 @@ def edit_product_offer(request, offer_id):
         product_offer.product = get_object_or_404(Products, id=product_id)
         offer_percentage = Decimal(request.POST.get('offer_percentage'))
         
-        if offer_percentage > 80:
+        if offer_percentage < 1:
+            messages.error(
+                request,
+                "Offer percentage cannot be less than 1%."
+            )
+        elif offer_percentage > 80:
             messages.error(
                 request,
                 "Offer percentage cannot exceed 80%."

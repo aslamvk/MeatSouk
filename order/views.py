@@ -382,9 +382,6 @@ def user_single_order_items(request, order_id):
     order = get_object_or_404(Order, id = order_id)
     order_items = OrderItem.objects.filter(order=order)
 
-    for item in order_items:
-        print("Item:",item.subtotal_price )
-        print(len(order_items))
     
     context = {
         'order': order,
@@ -729,7 +726,6 @@ def apply_coupon(request):
             data = json.loads(request.body)
             coupon_code = data.get("coupon_code")
             cart_total = Decimal(data.get("cart_total", "0.00"))
-            print("Received coupon code:", coupon_code)
 
             coupon = Coupon.objects.get(code=coupon_code, active=True)
 
@@ -755,7 +751,6 @@ def apply_coupon(request):
             else:
                 request.session.pop('coupon_code', None)
                 request.session.pop('discount_value', None)
-                print("Coupon is not valid for the current date.")
                 return JsonResponse({"error": "Coupon is not valid for this purchase."})
 
         except Coupon.DoesNotExist:
